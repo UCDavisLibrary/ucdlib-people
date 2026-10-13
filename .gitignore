@@ -1,0 +1,8 @@
+node_modules
+__pycache__
+.env
+.DS_Store
+secrets
+/services/client/public/js
+.claude
+notes.md

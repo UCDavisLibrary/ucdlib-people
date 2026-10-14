@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Onboarding Request Detail</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+<style>
+  body { margin: 0; }
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1d2430;
+    --muted: #5b6575;
+    --line: #d9dee6;
+    --accent: #022851;
+    --accent-soft: #e6ecf3;
+    --ok: #2e6b3a;
+    --ok-soft: #e4f1e6;
+    --warn: #8a5a00;
+    --warn-soft: #fbf0d9;
+    --bad: #9b2226;
+    --bad-soft: #f8e3e3;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #12161d;
+      --surface: #1a2029;
+      --text: #e6e9ee;
+      --muted: #9aa4b2;
+      --line: #2e3643;
+      --accent: #9cc3ea;
+      --accent-soft: #1f2d3d;
+      --ok: #8fd19e;
+      --ok-soft: #1c2e21;
+      --warn: #f2c66d;
+      --warn-soft: #33290f;
+      --bad: #f2a3a5;
+      --bad-soft: #3a1d1f;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #12161d;
+    --surface: #1a2029;
+    --text: #e6e9ee;
+    --muted: #9aa4b2;
+    --line: #2e3643;
+    --accent: #9cc3ea;
+    --accent-soft: #1f2d3d;
+    --ok: #8fd19e;
+    --ok-soft: #1c2e21;
+    --warn: #f2c66d;
+    --warn-soft: #33290f;
+    --bad: #f2a3a5;
+    --bad-soft: #3a1d1f;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+  .page { max-width: 960px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: grid; gap: 20px; }
+
+  .wf-note { font-size: 12px; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; padding: 6px 10px; }
+  .wf-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+  .wf-toggle { display: inline-flex; align-items: center; gap: 4px; }
+  .wf-toggle button { font: inherit; font-size: 12px; padding: 2px 8px; border: 1px dashed var(--muted); border-radius: 4px; background: none; color: var(--muted); cursor: pointer; }
+  .wf-toggle button[aria-pressed="true"] { border-style: solid; color: var(--text); background: var(--surface); }
+  .wf-toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .box.mine { border-color: var(--accent); }
+  .btn.danger { border-color: var(--bad); color: var(--bad); }
+  .pill.muted { background: var(--line); color: var(--muted); }
+  .expander { font: inherit; font-size: 14px; color: var(--text); background: none; border: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-align: left; }
+  .expander .chev { color: var(--muted); font-size: 11px; width: 10px; transition: transform 0.15s; }
+  .expander[aria-expanded="true"] .chev { transform: rotate(90deg); }
+  .expander:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .expander .chev { transition: none; } }
+  .blocked-by { color: var(--warn); }
+  tr.detail-row td { background: var(--bg); padding: 12px 16px 16px 24px; }
+  .action-detail { display: grid; gap: 14px; }
+  .action-detail dl { font-size: 13px; }
+  .dep-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dep { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 4px; padding: 2px 8px; background: var(--surface); }
+  .small-only { display: none; }
+  @media (max-width: 640px) {
+    #actions table { min-width: 0; }
+    #actions .col-who, #actions .col-details { display: none; }
+    .action-detail .small-only { display: grid; }
+  }
+  .admin-detail { display: grid; gap: 8px; border-top: 1px dashed var(--line); padding-top: 12px; }
+  .admin-detail pre { margin: 0; font-size: 12px; white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .admin-detail code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .cell-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .admin-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .admin-bar .sub { font-size: 13px; color: var(--muted); }
+  .crumbs { font-size: 13px; color: var(--muted); }
+  .crumbs a { color: var(--accent); text-decoration: none; }
+
+  header { display: flex; align-items: center; gap: 16px; }
+  .header-body { display: grid; gap: 10px; flex: 1; min-width: 0; }
+  header > .type-icon { width: 64px; height: 64px; border-radius: 12px; font-size: 30px; }
+  .title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  h1 { font-size: 24px; margin: 0; text-wrap: balance; }
+  .meta { display: flex; flex-wrap: wrap; gap: 4px 20px; color: var(--muted); font-size: 14px; }
+  .meta b { color: var(--text); font-weight: 600; }
+
+  .progress { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+  .progress a { color: var(--accent); text-decoration: none; }
+  .progress a:hover, .progress a:focus-visible { text-decoration: underline; }
+  .bar { flex: 1; max-width: 320px; height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .bar span { display: block; height: 100%; width: 60%; background: var(--accent); }
+
+  .tickets { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 14px; }
+  .tickets li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+  .tickets a { color: var(--accent); }
+  .tickets .sub { font-size: 13px; color: var(--muted); }
+  .ticket-group a { color: var(--accent); }
+  .child-tickets { padding-left: 14px; border-left: 2px solid var(--line); }
+  .box h3 { font-size: 13px; margin: 0; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .box h3.ticket-group { text-transform: none; letter-spacing: 0; font-weight: 400; margin-top: 4px; }
+
+  .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
+  .pill.neutral { background: var(--accent-soft); color: var(--accent); }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .tabs button {
+    font: inherit; font-size: 14px; background: none; border: none; color: var(--muted);
+    padding: 10px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; white-space: nowrap;
+  }
+  .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .tabs button:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .panel { display: grid; gap: 20px; }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 12px; }
+  h2 { font-size: 15px; margin: 0; }
+  .box.attention { border-color: var(--bad); }
+
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 20px; margin: 0; font-size: 14px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; }
+  dd.long-text { white-space: pre-line; max-width: 70ch; }
+  .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; align-items: start; }
+  dd.none { color: var(--muted); }
+
+  .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+  .row .what { display: grid; gap: 2px; }
+  .row .sub { font-size: 13px; color: var(--muted); }
+
+  .btn {
+    font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--accent); background: var(--surface); color: var(--accent);
+  }
+  a.btn { text-decoration: none; display: inline-block; }
+  .row a, .tickets a { color: var(--accent); }
+  .btn.primary { background: var(--accent); color: var(--surface); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
+  td a { color: var(--accent); }
+  td.none { color: var(--muted); }
+  tr.current td { background: var(--accent-soft); }
+  .pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .pagination .sub { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .page-btn { font: inherit; font-size: 13px; min-width: 32px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--text); cursor: pointer; }
+  .page-btn[aria-current="page"] { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+  .page-btn:disabled { color: var(--muted); cursor: default; opacity: 0.6; }
+  .page-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td .sub { font-size: 13px; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+
+  .empty { color: var(--muted); font-size: 14px; }
+  .toast { font-size: 13px; color: var(--muted); }
+  .type-icon {
+    display: inline-grid; place-items: center; flex: none;
+    width: 40px; height: 40px; border-radius: 8px;
+    background: var(--accent-soft); color: var(--accent); font-size: 20px;
+  }
+  .type-icon.sm { width: 22px; height: 22px; border-radius: 4px; font-size: 12px; }
+  .with-icon { display: inline-flex; align-items: center; gap: 6px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="wf-note wf-bar">
+    <span>Wireframe with example data. Buttons don't do anything yet.</span>
+    <span class="wf-toggle" role="group" aria-label="Example card">
+      <span>Show card:</span>
+      <button type="button" id="wf-show-failed" aria-pressed="true">Failed action</button>
+      <button type="button" id="wf-show-mine" aria-pressed="false">My action</button>
+    </span>
+    <span class="wf-toggle" role="group" aria-label="Viewer role">
+      <span>View as:</span>
+      <button type="button" id="wf-role-user" aria-pressed="true">Regular user</button>
+      <button type="button" id="wf-role-admin" aria-pressed="false">Admin</button>
+    </span>
+  </div>
+
+  <nav class="crumbs"><a href="#overview">Requests</a> / Onboarding / Jordan Alvarez</nav>
+
+  <header>
+    <span class="type-icon" title="Onboarding" role="img" aria-label="Onboarding request"><i class="fa-solid fa-user-plus"></i></span>
+    <div class="header-body">
+    <div class="title-row">
+      <h1>Jordan Alvarez</h1>
+    </div>
+    <div class="meta">
+      <span>Start date <b>Mon, Nov 2, 2026</b></span>
+      <span>Position <b>Programmer/Analyst II</b></span>
+      <span>Department <b>Digital Applications</b></span>
+    </div>
+    <div class="progress">
+      <div class="bar" role="progressbar" aria-valuenow="6" aria-valuemin="0" aria-valuemax="10" aria-label="Actions completed"><span></span></div>
+      <a href="#actions">6 of 10 actions done</a>
+    </div>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-overview" aria-controls="overview" aria-selected="true">Overview</button>
+    <button role="tab" id="tab-actions" aria-controls="actions" aria-selected="false">Actions</button>
+    <button role="tab" id="tab-related" aria-controls="related" aria-selected="false">Related requests</button>
+  </div>
+
+  <!-- Overview -->
+  <section class="panel" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+    <div class="box attention" id="card-failed">
+      <h2>Needs attention</h2>
+      <div class="row">
+        <div class="what">
+          <span>Facilities ticket <span class="pill bad">Failed</span></span>
+          <span class="sub">RT returned an error (500). Tried 2 times, next try around 2:15 PM.</span>
+        </div>
+        <button class="btn" type="button">Retry now</button>
+      </div>
+    </div>
+
+    <div class="box mine" id="card-mine" hidden>
+      <h2>Needs your action</h2>
+      <div class="row">
+        <div class="what">
+          <span>IT approval <span class="pill warn">Waiting on you</span></span>
+          <span class="sub">Assigned to IT. Approving creates the employee record and opens the RT tickets. The account is created on the start date.</span>
+        </div>
+        <button class="btn primary" type="button">Approve</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <h2>Employee</h2>
+      <dl>
+        <dt>Name</dt><dd>Jordan Alvarez</dd>
+        <dt>Position</dt><dd>Programmer/Analyst II</dd>
+        <dt>Department</dt><dd>Digital Applications</dd>
+        <dt>Supervisor</dt><dd>Sam Okafor</dd>
+        <dt>Appointment</dt><dd>Career, 100%</dd>
+        <dt>Work location</dt><dd>Shields Library, room 360</dd>
+        <dt>Notes</dt><dd class="long-text">Jordan is relocating from Sacramento and will be hybrid after the first month (in office Tuesday through Thursday).
+
+They'll need a standing desk if one is available, and access to the Digital Applications shared drive and the staging servers from day one so they can join the current sprint.
+
+Their previous employer was UC Berkeley, so they may already have a UC Path record.</dd>
+      </dl>
+    </div>
+
+    <div class="two-col">
+      <div class="box">
+        <h2>Request</h2>
+        <dl>
+          <dt>Type</dt><dd><span class="with-icon"><span class="type-icon sm" aria-hidden="true"><i class="fa-solid fa-user-plus"></i></span>Onboarding</span></dd>
+          <dt>Submitted by</dt><dd>Pat Nguyen</dd>
+          <dt>Submitted</dt><dd>Oct 13, 2026, 9:42 AM</dd>
+          <dt>Parent</dt><dd class="none">None</dd>
+        </dl>
+        <h3>Child requests</h3>
+        <ul class="tickets">
+          <li>
+            <span class="with-icon"><span class="type-icon sm" title="Permissions" aria-hidden="true"><i class="fa-solid fa-key"></i></span><a href="#related">Permissions</a> Sam Okafor, Oct 14</span>
+            <span class="sub">1 of 3 actions done</span>
+          </li>
+        </ul>
+      </div>
+      <div class="box">
+        <h2>RT tickets</h2>
+        <ul class="tickets">
+          <li>
+            <span><a href="https://rt.example.edu/Ticket/Display.html?id=48213">#48213</a> IT Account Provisioning</span>
+            <span class="pill neutral">open</span>
+          </li>
+          <li>
+            <span><a href="https://rt.example.edu/Ticket/Display.html?id=48214">#48214</a> Profile Picture Request</span>
+            <span class="pill neutral">new</span>
+          </li>
+        </ul>
+        <h3 class="ticket-group"><span class="with-icon"><span class="type-icon sm" aria-hidden="true"><i class="fa-solid fa-key"></i></span>From <a href="#related">Permissions request</a></span></h3>
+        <ul class="tickets child-tickets">
+          <li>
+            <span><a href="https://rt.example.edu/Ticket/Display.html?id=48231">#48231</a> Building Access</span>
+            <span class="pill neutral">open</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Actions -->
+  <section class="panel" id="actions" role="tabpanel" aria-labelledby="tab-actions" hidden>
+    <div class="box">
+      <div class="admin-bar admin-only" hidden>
+        <span class="sub">Admin: cancelled actions won't run and show as Cancelled. Done actions aren't changed.</span>
+        <button class="btn danger" type="button">Cancel all remaining (4)</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Status</th><th>Action</th><th class="col-who">Who</th><th class="col-details">Details</th><th></th></tr>
+          </thead>
+          <tbody id="actions-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Related -->
+  <section class="panel" id="related" role="tabpanel" aria-labelledby="tab-related" hidden>
+    <div class="box">
+      <h2>Child requests</h2>
+      <div class="row">
+        <div class="what">
+          <span class="with-icon"><span class="type-icon sm" aria-hidden="true"><i class="fa-solid fa-key"></i></span><a href="#related">Permissions request</a></span>
+          <span class="sub">Submitted by Sam Okafor on Oct 14, 2026, 8:30 AM</span>
+        </div>
+        <span class="sub">1 of 3 actions done</span>
+      </div>
+    </div>
+
+    <div class="box">
+      <h2>All requests for Jordan Alvarez</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Type</th><th>Submitted</th><th>Submitted by</th><th>Effective</th><th>Progress</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="with-icon"><span class="type-icon sm" aria-hidden="true"><i class="fa-solid fa-key"></i></span><a href="#related">Permissions</a></span></td>
+              <td>Oct 14, 2026</td>
+              <td>Sam Okafor</td>
+              <td class="none">None</td>
+              <td>1 of 3 actions done</td>
+            </tr>
+            <tr class="current">
+              <td><span class="with-icon"><span class="type-icon sm" aria-hidden="true"><i class="fa-solid fa-user-plus"></i></span>Onboarding</span> <span class="pill neutral">This request</span></td>
+              <td>Oct 13, 2026</td>
+              <td>Pat Nguyen</td>
+              <td>Nov 2, 2026</td>
+              <td>6 of 10 actions done</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <nav class="pagination" aria-label="All requests pages">
+        <button class="page-btn" type="button" disabled>Previous</button>
+        <button class="page-btn" type="button" aria-current="page">1</button>
+        <button class="page-btn" type="button" disabled>Next</button>
+        <span class="sub">2 requests</span>
+      </nav>
+    </div>
+  </section>
+
+  <p class="toast" id="toast" aria-live="polite"></p>
+</div>
+
+<script>
+  // example action data. deps use action keys, like depends_on
+  const ACTIONS = [
+    { key: 'it_approval', type: 'approval', automated: false, label: 'IT approval', who: 'IT',
+      status: 'done', details: 'Approved by Steve P.', sub: 'Oct 13, 10:05 AM', deps: [],
+      admin: { performed_by: 'steve-p', performed_at: '2026-10-13 10:05', attempts: 0, completion_data: { decision: 'approve' } } },
+    { key: 'create_db_record', type: 'create_db_record', automated: true, label: 'Create employee record', who: 'Automatic',
+      status: 'done', details: 'Oct 13, 10:05 AM', deps: ['it_approval'],
+      admin: { performed_at: '2026-10-13 10:05', attempts: 1, completion_data: { lib_employee_id: '6f1c2a0e-…' } } },
+    { key: 'ticket_it', type: 'create_ticket', automated: true, label: 'IT ticket', who: 'Automatic',
+      status: 'done', details: '<a href="https://rt.example.edu/Ticket/Display.html?id=48213">RT #48213</a>', sub: 'Ticket status: open', deps: ['create_db_record'],
+      admin: { performed_at: '2026-10-13 10:06', attempts: 1, config: { queue: 'it' }, external: 'rt / 48213 / IT Account Provisioning / open (checked 2:00 PM)' } },
+    { key: 'ticket_profile_picture', type: 'create_ticket', automated: true, label: 'Profile picture request', who: 'Automatic',
+      status: 'done', details: '<a href="https://rt.example.edu/Ticket/Display.html?id=48214">RT #48214</a>', sub: 'Ticket status: new', deps: ['create_db_record'],
+      admin: { performed_at: '2026-10-13 10:06', attempts: 1, config: { queue: 'communications' }, external: 'rt / 48214 / Profile Picture Request / new (checked 2:00 PM)' } },
+    { key: 'ticket_facilities', type: 'create_ticket', automated: true, label: 'Facilities ticket', who: 'Automatic',
+      status: 'failed', details: 'RT returned an error (500)', sub: 'Attempt 2 of 5', deps: ['create_db_record'], buttons: ['retry', 'cancel'],
+      admin: { attempts: 2, last_attempted_at: '2026-10-13 11:15', last_error: 'RT API: 500 Internal Server Error (POST /REST/2.0/ticket)', config: { queue: 'facilities' } } },
+    { key: 'facilities_followup', type: 'comment_ticket', automated: true, label: 'Facilities follow-up', who: 'Automatic',
+      status: 'blocked', deps: ['ticket_facilities'], buttons: ['cancel'],
+      admin: { attempts: 0, config: { ticket_action: 'ticket_facilities', template: 'workspace_needs' } } },
+    { key: 'email_supervisor', type: 'send_email', automated: true, label: 'Email supervisor', who: 'Automatic',
+      status: 'done', details: 'Sent to Sam Okafor', sub: 'Oct 13, 10:06 AM', deps: ['it_approval'],
+      admin: { performed_at: '2026-10-13 10:06', attempts: 1, config: { template: 'onboarding_supervisor', recipient: 'supervisor' } } },
+    { key: 'supervisor_permissions_form', type: 'await_children', automated: true, label: 'Supervisor permissions form', who: 'Supervisor',
+      status: 'done', details: 'Submitted by Sam Okafor', sub: 'Oct 14, 8:30 AM', deps: ['email_supervisor'],
+      admin: { performed_at: '2026-10-14 08:30', attempts: 0, config: { request_type: 'permissions', until: 'submitted' } } },
+    { key: 'create_keycloak_account', type: 'create_keycloak_account', automated: true, label: 'Create Keycloak account', who: 'Automatic',
+      status: 'scheduled', details: 'Runs on Nov 2, 2026', deps: ['it_approval', 'create_db_record'], buttons: ['run', 'cancel'],
+      admin: { scheduled_for: '2026-11-02', attempts: 0 } },
+    { key: 'permissions_fulfilled', type: 'await_children', automated: true, label: 'Permissions fulfilled', who: 'Automatic',
+      status: 'waiting', details: "Waits for the permissions request's actions to finish", sub: '1 of 3 done', deps: ['supervisor_permissions_form'], buttons: ['cancel'],
+      admin: { attempts: 0, config: { request_type: 'permissions', until: 'fulfilled' } } }
+  ];
+
+  const STATUS = {
+    done: ['Done', 'ok'], failed: ['Failed', 'bad'], blocked: ['Blocked', 'muted'],
+    scheduled: ['Scheduled', 'neutral'], waiting: ['Waiting', 'warn'], skipped: ['Skipped', 'muted']
+  };
+  const byKey = Object.fromEntries(ACTIONS.map(a => [a.key, a]));
+  const finished = a => a.status === 'done' || a.status === 'skipped';
+  let isAdmin = false;
+
+  function depChip(a) {
+    const [text, cls] = STATUS[a.status];
+    return `<span class="dep">${a.label} <span class="pill ${cls}">${text}</span></span>`;
+  }
+
+  function adminRows(a) {
+    const rows = [
+      ['Action key', `<code>${a.key}</code>`],
+      ['Action type', `<code>${a.type}</code>`],
+      ['Automated', a.automated ? 'Yes' : 'No'],
+      ['Depends on', a.deps.length ? `<code>${a.deps.join(', ')}</code>` : 'None'],
+      ['Attempts', a.admin.attempts]
+    ];
+    if ( a.admin.scheduled_for ) rows.push(['Scheduled for', a.admin.scheduled_for]);
+    if ( a.admin.last_attempted_at ) rows.push(['Last attempted', a.admin.last_attempted_at]);
+    if ( a.admin.last_error ) rows.push(['Last error', `<span class="blocked-by">${a.admin.last_error}</span>`]);
+    if ( a.admin.performed_by ) rows.push(['Performed by', a.admin.performed_by]);
+    if ( a.admin.performed_at ) rows.push(['Performed at', a.admin.performed_at]);
+    if ( a.admin.external ) rows.push(['External', a.admin.external]);
+    rows.push(['Config', `<pre>${JSON.stringify(a.admin.config || {}, null, 2)}</pre>`]);
+    rows.push(['Completion data', `<pre>${JSON.stringify(a.admin.completion_data || {}, null, 2)}</pre>`]);
+    return rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  }
+
+  function renderActions() {
+    const body = document.getElementById('actions-body');
+    body.innerHTML = ACTIONS.map((a, i) => {
+      const [text, cls] = STATUS[a.status];
+      const neededBy = ACTIONS.filter(o => o.deps.includes(a.key));
+      const unmet = a.deps.map(k => byKey[k]).filter(d => !finished(d));
+
+      // option 1: blocked rows say what they're waiting on
+      let details = a.details || '';
+      if ( a.status === 'blocked' ) {
+        details = `<span>Waiting on: ${unmet.map(d => `${d.label} (${STATUS[d.status][0].toLowerCase()})`).join(', ')}</span>`;
+      }
+      const sub = a.sub ? `<div class="sub">${a.sub}</div>` : '';
+
+      const btns = (a.buttons || []).map(b => {
+        if ( b === 'retry' ) return '<button class="btn" type="button">Retry now</button>';
+        if ( b === 'run' ) return `<button class="btn admin-only" type="button" ${isAdmin ? '' : 'hidden'}>Run now</button>`;
+        if ( b === 'cancel' ) return `<button class="btn danger admin-only" type="button" ${isAdmin ? '' : 'hidden'}>Cancel</button>`;
+      }).join('');
+
+      return `
+        <tr>
+          <td><span class="pill ${cls}">${text}</span></td>
+          <td><button class="expander" type="button" aria-expanded="false" aria-controls="detail-${i}"><span class="chev" aria-hidden="true">&#9654;</span>${a.label}</button></td>
+          <td class="col-who">${a.who}</td>
+          <td class="col-details">${details}${sub}</td>
+          <td><div class="cell-btns">${btns}</div></td>
+        </tr>
+        <tr class="detail-row" id="detail-${i}" hidden>
+          <td colspan="5">
+            <div class="action-detail">
+              <dl class="small-only">
+                <dt>Who</dt><dd>${a.who}</dd>
+                <dt>Details</dt><dd>${details || '<span class="sub">None</span>'}${sub}</dd>
+              </dl>
+              <dl>
+                <dt>Depends on</dt><dd><div class="dep-list">${a.deps.length ? a.deps.map(k => depChip(byKey[k])).join('') : '<span class="sub">Nothing, runs first</span>'}</div></dd>
+                <dt>Needed by</dt><dd><div class="dep-list">${neededBy.length ? neededBy.map(depChip).join('') : '<span class="sub">Nothing</span>'}</div></dd>
+              </dl>
+              <div class="admin-detail admin-only" ${isAdmin ? '' : 'hidden'}>
+                <h3>Admin details</h3>
+                <dl>${adminRows(a)}</dl>
+              </div>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+
+    // option 3: expand a row to see its dependencies both ways (+ admin details)
+    body.querySelectorAll('.expander').forEach(btn => btn.addEventListener('click', () => {
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', String(open));
+      document.getElementById(btn.getAttribute('aria-controls')).hidden = !open;
+    }));
+  }
+  renderActions();
+
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+
+  function showTab(id) {
+    tabs.forEach(t => {
+      const selected = t.getAttribute('aria-controls') === id;
+      t.setAttribute('aria-selected', String(selected));
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !selected;
+    });
+  }
+
+  tabs.forEach(t => t.addEventListener('click', () => {
+    const id = t.getAttribute('aria-controls');
+    showTab(id);
+    history.replaceState(null, '', '#' + id);
+  }));
+
+  function showTabFromHash() {
+    const id = location.hash.slice(1);
+    if ( tabs.some(t => t.getAttribute('aria-controls') === id) ) showTab(id);
+  }
+  showTabFromHash();
+  window.addEventListener('hashchange', showTabFromHash);
+
+  // wireframe-only: swap the failed card for a card that needs the viewer's action
+  const wfFailed = document.getElementById('wf-show-failed');
+  const wfMine = document.getElementById('wf-show-mine');
+  function showCard(mine) {
+    document.getElementById('card-failed').hidden = mine;
+    document.getElementById('card-mine').hidden = !mine;
+    wfFailed.setAttribute('aria-pressed', String(!mine));
+    wfMine.setAttribute('aria-pressed', String(mine));
+  }
+  wfFailed.addEventListener('click', () => showCard(false));
+  wfMine.addEventListener('click', () => showCard(true));
+
+  // wireframe-only: show admin controls on the actions tab
+  const wfUser = document.getElementById('wf-role-user');
+  const wfAdmin = document.getElementById('wf-role-admin');
+  function showAdmin(admin) {
+    isAdmin = admin;
+    document.querySelectorAll('.admin-only').forEach(el => el.hidden = !admin);
+    wfUser.setAttribute('aria-pressed', String(!admin));
+    wfAdmin.setAttribute('aria-pressed', String(admin));
+  }
+  wfUser.addEventListener('click', () => showAdmin(false));
+  wfAdmin.addEventListener('click', () => showAdmin(true));
+
+  document.querySelectorAll('button.btn').forEach(b => b.addEventListener('click', () => {
+    document.getElementById('toast').textContent = `"${b.textContent}" isn't wired up in this wireframe.`;
+  }));
+</script>
+
+</body>
+</html>

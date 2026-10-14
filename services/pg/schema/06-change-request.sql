@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS lib_employee_change_request_action (
   last_error TEXT,
   external_system VARCHAR(50),
   external_id VARCHAR(100),
+  external_subject TEXT,
   external_status VARCHAR(100),
   external_status_checked_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -133,6 +134,26 @@ CREATE OR REPLACE FUNCTION get_runnable_lib_emp_change_req_actions(
     ORDER BY a.created_at
 $$;
 
+-- Returns a display status for an action, explaining why a pending action hasn't run yet.
+-- cancelled: skipped by an admin (completion_data.cancelled = true)
+-- done, skipped, failed: same as status
+-- blocked: pending, dependencies not met
+-- scheduled: pending, scheduled_for is in the future (America/Los_Angeles)
+-- waiting: pending, waiting on a person (human action) or on child requests (await_children)
+-- queued: pending, automated, will run on the next check
+-- a: lib_employee_change_request_action row
+CREATE OR REPLACE FUNCTION lib_emp_change_req_action_display_status(a lib_employee_change_request_action)
+  RETURNS text LANGUAGE sql STABLE AS $$
+    SELECT CASE
+      WHEN a.status = 'skipped' AND (a.completion_data ->> 'cancelled')::boolean THEN 'cancelled'
+      WHEN a.status IN ('done', 'skipped', 'failed') THEN a.status
+      WHEN NOT lib_emp_change_req_action_deps_met(a) THEN 'blocked'
+      WHEN a.scheduled_for > (now() AT TIME ZONE 'America/Los_Angeles')::date THEN 'scheduled'
+      WHEN NOT a.is_automated OR a.action_type = 'await_children' THEN 'waiting'
+      ELSE 'queued'
+    END
+$$;
+
 
 CREATE TABLE IF NOT EXISTS lib_employee_change_request_revision (
   lib_employee_change_request_revision_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -149,7 +170,8 @@ CREATE TABLE IF NOT EXISTS lib_employee_change_request_revision (
 -- lib_employee: object, or null (e.g. onboarding before the employee record is created)
 -- submitted_by_app_user: object, or null
 -- parent_lib_employee_change_request: object, or null if top-level
--- actions: array of every action column plus a performed_by_app_user object (or null), [] if none.
+-- actions: array of every action column plus a performed_by_app_user object (or null) and
+--   display_status (see lib_emp_change_req_action_display_status), [] if none.
 --   ordered by created_at (groups actions added together, e.g. by a later revision), then sort_order
 CREATE OR REPLACE VIEW lib_employee_change_request_full AS
 SELECT
@@ -200,7 +222,8 @@ LEFT JOIN LATERAL (
           'last_name', u.last_name,
           'email', u.email
         )
-      END
+      END,
+      'display_status', lib_emp_change_req_action_display_status(a)
     ) ORDER BY a.created_at, a.sort_order, a.action_key
   ) AS actions
   FROM lib_employee_change_request_action a

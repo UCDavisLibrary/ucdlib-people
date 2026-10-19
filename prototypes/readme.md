@@ -7,3 +7,5 @@ Each wireframe has its own folder with a `readme.md` (artifact link, description
 | Wireframe | Description |
 |---|---|
 | [onboarding-request](onboarding-request/readme.md) | Detail view of an in-progress onboarding request. Saved as [index.html](onboarding-request/index.html) |
+| [employees-landing](employees-landing/readme.md) | Employee landing page: filterable, paginated list of library employees. Saved as [index.html](employees-landing/index.html) |
+| [requests-landing](requests-landing/readme.md) | Requests landing page: start a request, and a filterable, paginated list of existing requests. Saved as [index.html](requests-landing/index.html) |

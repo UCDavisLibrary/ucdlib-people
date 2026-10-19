@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Library Employees</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+<style>
+  body { margin: 0; }
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1d2430;
+    --muted: #5b6575;
+    --line: #d9dee6;
+    --accent: #022851;
+    --accent-soft: #e6ecf3;
+    --warn: #8a5a00;
+    --warn-soft: #fbf0d9;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #12161d;
+      --surface: #1a2029;
+      --text: #e6e9ee;
+      --muted: #9aa4b2;
+      --line: #2e3643;
+      --accent: #9cc3ea;
+      --accent-soft: #1f2d3d;
+      --warn: #f2c66d;
+      --warn-soft: #33290f;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #12161d;
+    --surface: #1a2029;
+    --text: #e6e9ee;
+    --muted: #9aa4b2;
+    --line: #2e3643;
+    --accent: #9cc3ea;
+    --accent-soft: #1f2d3d;
+    --warn: #f2c66d;
+    --warn-soft: #33290f;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+  .page { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: grid; gap: 20px; }
+
+  .wf-note { font-size: 12px; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; padding: 6px 10px; }
+
+  h1 { font-size: 24px; margin: 0; }
+  h2 { font-size: 15px; margin: 0; }
+  a { color: var(--accent); }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 12px; }
+
+  .filters { display: grid; gap: 12px; }
+  .field { display: grid; gap: 4px; }
+  .field label { font-size: 13px; color: var(--muted); }
+  .field input[type="text"], .field select {
+    font: inherit; font-size: 14px; color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; width: 100%; box-sizing: border-box; min-width: 0;
+  }
+  .check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .check.strong { font-size: 14px; color: var(--text); }
+  .btn { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 4px; cursor: pointer; border: 1px solid var(--accent); background: var(--surface); color: var(--accent); justify-self: start; }
+
+  .list-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+  .sub { font-size: 13px; color: var(--muted); }
+
+  .teasers { list-style: none; margin: 0; padding: 0; }
+  .teaser { display: grid; gap: 2px; padding-block: 12px; border-bottom: 1px solid var(--line); }
+  .teaser:first-child { padding-top: 0; }
+  .teaser:last-child { border-bottom: none; padding-bottom: 0; }
+  .teaser-top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .teaser .name { font-weight: 600; font-size: 16px; text-decoration: none; }
+  .teaser .name:hover { text-decoration: underline; }
+  .teaser .position { font-size: 14px; }
+  .teaser .meta { display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: 13px; color: var(--muted); }
+  .field-val { display: inline-flex; align-items: center; gap: 6px; }
+  .field-val svg, .field-val i { color: var(--muted); width: 14px; flex: none; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .teaser.inactive .name, .teaser.inactive .position { color: var(--muted); }
+
+  .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.muted { background: var(--line); color: var(--muted); }
+
+  .empty { color: var(--muted); font-size: 14px; padding: 24px 8px; text-align: center; }
+
+  .pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .pagination .sub { margin-left: auto; }
+  .page-btn { font: inherit; font-size: 13px; min-width: 32px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--text); cursor: pointer; }
+  .page-btn[aria-current="page"] { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+  .page-btn:disabled { color: var(--muted); cursor: default; opacity: 0.6; }
+</style>
+</head>
+<body>
+<div class="page">
+  <p class="wf-note">Wireframe with example data. Filters and pagination work; employee links don't.</p>
+
+  <h1>Library Employees</h1>
+
+  <div class="layout">
+    <aside class="box" aria-labelledby="filter-heading">
+      <h2 id="filter-heading">Filter</h2>
+      <form class="filters" id="filters">
+        <div class="field">
+          <label for="f-name">Name</label>
+          <input type="text" id="f-name" placeholder="First or last name" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="f-id">ID</label>
+          <input type="text" id="f-id" placeholder="Full IAM, employee, or user ID, or email" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="f-dept">Department</label>
+          <select id="f-dept"></select>
+          <label class="check" for="f-subgroups"><input type="checkbox" id="f-subgroups" checked> Include subgroups</label>
+        </div>
+        <div class="field">
+          <label for="f-status">Employee status</label>
+          <select id="f-status">
+            <option value="active" selected>Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="">All</option>
+          </select>
+        </div>
+        <label class="check strong" for="f-discrepancy"><input type="checkbox" id="f-discrepancy"> Has record discrepancy</label>
+        <button class="btn" type="reset">Clear filters</button>
+      </form>
+    </aside>
+
+    <section class="box" aria-labelledby="list-heading">
+      <div class="list-head">
+        <h2 id="list-heading">Employees</h2>
+      </div>
+      <ul class="teasers" id="teasers"></ul>
+      <nav class="pagination" aria-label="Employee pages" id="pagination"></nav>
+    </section>
+  </div>
+</div>
+
+<script>
+  // department -> parent department, for "include subgroups"
+  const DEPT_PARENT = {
+    'Administration': null,
+    'Information Technology': null,
+    'Digital Applications': 'Information Technology',
+    'Facilities': null,
+    'Special Collections': null,
+    'Research Services': null,
+    'Access Services': null
+  };
+
+  const DISCREPANCY_LABELS = {
+    'no-rosetta-record': 'No Rosetta record',
+    'no-supervisor': 'No supervisor in Rosetta',
+    'no-supervisor-rosetta-record': 'Supervisor has no Rosetta record'
+  };
+
+  // example employees
+  const EMPLOYEES = [
+    { first: 'Jordan', last: 'Alvarez', ids: ['1004521', '10293847', 'jalvarez', 'jalvarez@ucdavis.edu'], position: 'Programmer/Analyst II', appointment: 'Programmer/Analyst II', dept: 'Digital Applications', supervisor: 'Sam Okafor', active: true, discrepancies: ['no-rosetta-record'] },
+    { first: 'Sam', last: 'Okafor', ids: ['1000318', '10111222', 'sokafor', 'sokafor@ucdavis.edu'], position: 'Head of Digital Applications', appointment: 'Programmer/Analyst IV', dept: 'Digital Applications', supervisor: 'Lena Hart', active: true, discrepancies: [] },
+    { first: 'Elena', last: 'Ruiz', ids: ['1002210', '10233445', 'eruiz', 'eruiz@ucdavis.edu'], position: 'Application Developer', appointment: 'Programmer/Analyst III', dept: 'Digital Applications', supervisor: 'Sam Okafor', active: true, discrepancies: [] },
+    { first: 'Ben', last: 'Ito', ids: ['1001877', '10199001', 'bito', 'bito@ucdavis.edu'], position: 'Web Developer', appointment: 'Programmer/Analyst II', dept: 'Digital Applications', supervisor: 'Sam Okafor', active: false, discrepancies: [] },
+    { first: 'Avery', last: 'Brooks', ids: ['1004612', '10300112', 'abrooks', 'abrooks@ucdavis.edu'], position: 'Systems Administrator', appointment: 'Systems Administrator II', dept: 'Information Technology', supervisor: 'Lena Hart', active: true, discrepancies: [] },
+    { first: 'Lena', last: 'Hart', ids: ['1000102', '10055660', 'lhart', 'lhart@ucdavis.edu'], position: 'Associate University Librarian for IT', appointment: 'Librarian', dept: 'Information Technology', supervisor: 'Rosa Diaz', active: true, discrepancies: [] },
+    { first: 'Tom', last: 'Becker', ids: ['1003390', '10244781', 'tbecker', 'tbecker@ucdavis.edu'], position: 'Help Desk Technician', appointment: 'Computer Resource Specialist I', dept: 'Information Technology', supervisor: 'Lena Hart', active: true, discrepancies: ['no-supervisor-rosetta-record'] },
+    { first: 'Dana', last: 'Whitfield', ids: ['1004588', '10298870', 'dwhitfield', 'dwhitfield@ucdavis.edu'], position: 'Facilities Coordinator', appointment: 'Building Maintenance Worker', dept: 'Facilities', supervisor: 'Ray Ortiz', active: true, discrepancies: [] },
+    { first: 'Ray', last: 'Ortiz', ids: ['1000877', '10077120', 'rortiz', 'rortiz@ucdavis.edu'], position: 'Facilities Manager', appointment: 'Facilities Manager II', dept: 'Facilities', supervisor: 'Rosa Diaz', active: true, discrepancies: [] },
+    { first: 'Priya', last: 'Lee', ids: ['1001455', '10166543', 'plee', 'plee@ucdavis.edu'], position: 'Archivist', appointment: 'Archivist 2', dept: 'Special Collections', supervisor: 'Helen Park', active: false, discrepancies: [] },
+    { first: 'Kai', last: 'Nakamura', ids: ['1004102', '10280034', 'knakamura', 'knakamura@ucdavis.edu'], position: 'Processing Archivist', appointment: 'Archivist 1', dept: 'Special Collections', supervisor: 'Helen Park', active: true, discrepancies: [] },
+    { first: 'Helen', last: 'Park', ids: ['1000233', '10060077', 'hpark', 'hpark@ucdavis.edu'], position: 'Head of Special Collections', appointment: 'Librarian', dept: 'Special Collections', supervisor: 'Rosa Diaz', active: true, discrepancies: [] },
+    { first: 'Marcus', last: 'Chen', ids: ['1001990', '10201234', 'mchen', 'mchen@ucdavis.edu'], position: 'Research Librarian', appointment: 'Librarian', dept: 'Research Services', supervisor: 'Sofia Martins', active: true, discrepancies: [] },
+    { first: 'Sofia', last: 'Martins', ids: ['1000456', '10070011', 'smartins', 'smartins@ucdavis.edu'], position: 'Head of Research Services', appointment: 'Librarian', dept: 'Research Services', supervisor: 'Rosa Diaz', active: true, discrepancies: [] },
+    { first: 'Grace', last: 'Okoye', ids: ['1001122', '10144556', 'gokoye', 'gokoye@ucdavis.edu'], position: 'Circulation Supervisor', appointment: 'Library Assistant IV', dept: 'Access Services', supervisor: 'Jun Tanaka', active: false, discrepancies: [] },
+    { first: 'Noah', last: 'Fischer', ids: ['1004755', '10310987', 'nfischer', 'nfischer@ucdavis.edu'], position: 'Student Assistant', appointment: 'Student Assistant 2', dept: 'Access Services', supervisor: null, active: true, discrepancies: ['no-supervisor'] },
+    { first: 'Jun', last: 'Tanaka', ids: ['1000777', '10088990', 'jtanaka', 'jtanaka@ucdavis.edu'], position: 'Access Services Supervisor', appointment: 'Library Assistant V', dept: 'Access Services', supervisor: 'Rosa Diaz', active: true, discrepancies: [] },
+    { first: 'Rosa', last: 'Diaz', ids: ['1000001', '10000123', 'rdiaz', 'rdiaz@ucdavis.edu'], position: 'University Librarian', appointment: 'University Librarian', dept: 'Administration', supervisor: null, active: true, discrepancies: [] }
+  ].sort((a, b) =>
+    // employees with record discrepancies first, then by last name
+    (b.discrepancies.length > 0) - (a.discrepancies.length > 0) ||
+    (a.last + a.first).localeCompare(b.last + b.first)
+  );
+
+  const PAGE_SIZE = 10;
+  let page = 1;
+  const $ = id => document.getElementById(id);
+
+  /**
+   * @description Whether a department is the given department or one of its descendants
+   */
+  function inDept(dept, filterDept, includeSubgroups) {
+    if ( dept === filterDept ) return true;
+    if ( !includeSubgroups ) return false;
+    let parent = DEPT_PARENT[dept];
+    while ( parent ) {
+      if ( parent === filterDept ) return true;
+      parent = DEPT_PARENT[parent];
+    }
+    return false;
+  }
+
+  function filtered() {
+    const name = $('f-name').value.trim().toLowerCase();
+    const id = $('f-id').value.trim().toLowerCase();
+    const dept = $('f-dept').value;
+    const subgroups = $('f-subgroups').checked;
+    const status = $('f-status').value;
+    const discrepancy = $('f-discrepancy').checked;
+
+    return EMPLOYEES.filter(e => {
+      if ( name && !`${e.first} ${e.last}`.toLowerCase().includes(name) ) return false;
+      // exact (case-insensitive) match, like search_lib_employee_ids
+      if ( id && !e.ids.some(v => v.toLowerCase() === id) ) return false;
+      if ( dept && !inDept(e.dept, dept, subgroups) ) return false;
+      if ( status === 'active' && !e.active ) return false;
+      if ( status === 'inactive' && e.active ) return false;
+      if ( discrepancy && !e.discrepancies.length ) return false;
+      return true;
+    });
+  }
+
+  /**
+   * @description A teaser field prefixed with an icon. The label is kept for screen readers and as a tooltip.
+   */
+  function field(icon, label, value) {
+    return `<span class="field-val" title="${label}"><i class="fa-solid ${icon}" aria-hidden="true"></i><span class="sr-only">${label}: </span>${value}</span>`;
+  }
+
+  function render() {
+    const rows = filtered();
+    const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    page = Math.min(page, pages);
+    const start = (page - 1) * PAGE_SIZE;
+    const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+    $('teasers').innerHTML = pageRows.length ? pageRows.map(e => {
+      const discTitle = e.discrepancies.map(d => DISCREPANCY_LABELS[d]).join(', ');
+      const indicators = [
+        e.discrepancies.length ? `<span class="pill warn" title="${discTitle}"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>Record discrepancy</span>` : '',
+        e.active ? '' : '<span class="pill muted">Inactive</span>'
+      ].join('');
+      return `
+        <li class="teaser${e.active ? '' : ' inactive'}">
+          <div class="teaser-top"><a class="name" href="#">${e.first} ${e.last}</a>${indicators}</div>
+          <div class="position">${field('fa-briefcase', 'Position', e.position)}</div>
+          <div class="meta">
+            ${field('fa-sitemap', 'Department', e.dept)}
+            ${field('fa-user-tie', 'Supervisor', e.supervisor || 'None')}
+          </div>
+        </li>`;
+    }).join('') : '<li class="empty">No employees match these filters.</li>';
+
+    // pagination is always shown, even with one page
+    let html = `<button class="page-btn" type="button" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>Previous</button>`;
+    for ( let p = 1; p <= pages; p++ ) {
+      html += `<button class="page-btn" type="button" data-page="${p}" ${p === page ? 'aria-current="page"' : ''}>${p}</button>`;
+    }
+    html += `<button class="page-btn" type="button" data-page="${page + 1}" ${page === pages ? 'disabled' : ''}>Next</button>`;
+    html += `<span class="sub">${rows.length ? `${start + 1}–${start + pageRows.length} of ${rows.length}` : '0'} employees</span>`;
+    $('pagination').innerHTML = html;
+  }
+
+  $('f-dept').innerHTML = '<option value="">All departments</option>' +
+    Object.keys(DEPT_PARENT).sort().map(d => `<option>${d}</option>`).join('');
+
+  $('pagination').addEventListener('click', e => {
+    const btn = e.target.closest('[data-page]');
+    if ( !btn || btn.disabled ) return;
+    page = Number(btn.dataset.page);
+    render();
+  });
+  $('filters').addEventListener('input', () => { page = 1; render(); });
+  // reset restores the defaults, including status = Active
+  $('filters').addEventListener('reset', () => setTimeout(() => { page = 1; render(); }));
+  $('filters').addEventListener('submit', e => e.preventDefault());
+
+  render();
+</script>
+</body>
+</html>

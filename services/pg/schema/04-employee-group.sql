@@ -57,6 +57,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Returns the given group's id and the ids of all its descendants (subgroups at any depth).
+-- Used for "this department and its subdepartments" filtering and visibility.
+-- root_group_id: lib_group_id to start from
+CREATE OR REPLACE FUNCTION get_lib_group_descendant_ids(root_group_id UUID)
+  RETURNS SETOF UUID LANGUAGE sql STABLE AS $$
+    WITH RECURSIVE tree AS (
+      SELECT lib_group_id FROM lib_group WHERE lib_group_id = root_group_id
+      UNION
+      SELECT g.lib_group_id
+      FROM lib_group g
+      JOIN tree t ON g.parent_lib_group_id = t.lib_group_id
+    )
+    SELECT lib_group_id FROM tree
+$$;
+
 CREATE TABLE IF NOT EXISTS lib_group_membership (
   lib_employee_id UUID REFERENCES lib_employee(lib_employee_id) ON DELETE CASCADE,
   lib_group_id UUID REFERENCES lib_group(lib_group_id) ON DELETE CASCADE,

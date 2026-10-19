@@ -12,6 +12,7 @@ $$ LANGUAGE sql STABLE;
 -- supervisor: object, or null if no supervisor
 -- employee_groups: array of groups, or [] if none
 -- employee_meta: object keyed by lib_employee_meta.name, or {} if none
+-- employee_record_discrepancies: array of open discrepancies, oldest first, or [] if none
 CREATE OR REPLACE VIEW lib_employee_full AS
 SELECT
   e.*,
@@ -27,7 +28,8 @@ SELECT
     )
   END AS supervisor,
   COALESCE(grp.employee_groups, '[]'::jsonb) AS employee_groups,
-  COALESCE(meta.employee_meta, '{}'::jsonb) AS employee_meta
+  COALESCE(meta.employee_meta, '{}'::jsonb) AS employee_meta,
+  COALESCE(disc.employee_record_discrepancies, '[]'::jsonb) AS employee_record_discrepancies
 FROM lib_employee e
 LEFT JOIN lib_employee s
   ON s.lib_employee_id = e.supervisor_lib_employee_id
@@ -50,7 +52,20 @@ LEFT JOIN LATERAL (
   FROM lib_employee_meta_assignment ma
   JOIN lib_employee_meta m ON m.lib_employee_meta_id = ma.lib_employee_meta_id
   WHERE ma.lib_employee_id = e.lib_employee_id
-) meta ON true;
+) meta ON true
+LEFT JOIN LATERAL (
+  SELECT jsonb_agg(
+    jsonb_build_object(
+      'employee_record_discrepancy_id', d.employee_record_discrepancy_id,
+      'discrepancy', d.discrepancy,
+      'details', d.details,
+      'created_at', d.created_at,
+      'last_confirmed_at', d.last_confirmed_at
+    ) ORDER BY d.created_at
+  ) AS employee_record_discrepancies
+  FROM employee_record_discrepancy d
+  WHERE d.lib_employee_id = e.lib_employee_id
+) disc ON true;
 
 -- Same as lib_employee_full, filtered to active employees
 CREATE OR REPLACE VIEW lib_employee_full_active AS

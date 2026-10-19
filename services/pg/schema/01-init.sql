@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS app_user (
     last_name TEXT,
     email VARCHAR(200) NOT NULL,
     last_login timestamp,
+    app_user_settings JSONB NOT NULL DEFAULT '{}'::JSONB,
     created timestamp DEFAULT NOW()
 );
 COMMENT ON TABLE app_user IS 'Table for storing user information. Set when a user logs in';

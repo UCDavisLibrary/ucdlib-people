@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Employee Requests</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+<style>
+  body { margin: 0; }
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1d2430;
+    --muted: #5b6575;
+    --line: #d9dee6;
+    --accent: #022851;
+    --accent-soft: #e6ecf3;
+    --ok: #2e6b3a;
+    --ok-soft: #e4f1e6;
+    --warn: #8a5a00;
+    --warn-soft: #fbf0d9;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #12161d;
+      --surface: #1a2029;
+      --text: #e6e9ee;
+      --muted: #9aa4b2;
+      --line: #2e3643;
+      --accent: #9cc3ea;
+      --accent-soft: #1f2d3d;
+      --ok: #8fd19e;
+      --ok-soft: #1c2e21;
+      --warn: #f2c66d;
+      --warn-soft: #33290f;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #12161d;
+    --surface: #1a2029;
+    --text: #e6e9ee;
+    --muted: #9aa4b2;
+    --line: #2e3643;
+    --accent: #9cc3ea;
+    --accent-soft: #1f2d3d;
+    --ok: #8fd19e;
+    --ok-soft: #1c2e21;
+    --warn: #f2c66d;
+    --warn-soft: #33290f;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+  .page { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: grid; gap: 20px; }
+
+  .wf-note { font-size: 12px; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; padding: 6px 10px; }
+  .wf-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+  .wf-toggle { display: inline-flex; align-items: center; gap: 4px; }
+  .wf-toggle button { font: inherit; font-size: 12px; padding: 2px 8px; border: 1px dashed var(--muted); border-radius: 4px; background: none; color: var(--muted); cursor: pointer; }
+  .wf-toggle button[aria-pressed="true"] { border-style: solid; color: var(--text); background: var(--surface); }
+
+  h1 { font-size: 24px; margin: 0; }
+  h2 { font-size: 15px; margin: 0; }
+  a { color: var(--accent); }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+  .sidebar { display: grid; gap: 20px; }
+
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 12px; }
+
+  .type-icon {
+    display: inline-grid; place-items: center; flex: none;
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--accent-soft); color: var(--accent); font-size: 14px;
+  }
+  .type-icon.sm { width: 22px; height: 22px; border-radius: 4px; font-size: 12px; }
+
+  .collapse-btn { font: inherit; font-weight: inherit; font-size: inherit; color: inherit; background: none; border: none; padding: 0; margin: 0; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; text-align: left; }
+  .collapse-btn .chev { color: var(--muted); font-size: 12px; transition: transform 0.15s; }
+  .collapse-btn[aria-expanded="false"] .chev { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) { .collapse-btn .chev { transition: none; } }
+  .start-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .start-list a { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; padding: 8px; border-radius: 4px; text-decoration: none; color: var(--text); }
+  .start-list a:hover { background: var(--accent-soft); }
+  .start-list .name { font-weight: 600; color: var(--accent); }
+  .start-list .blurb { grid-column: 2; font-size: 13px; color: var(--muted); }
+  .start-list.compact a { align-items: center; padding: 6px 8px; }
+  .start-sub { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 4px; }
+  .link-btn { font: inherit; font-size: 14px; color: var(--accent); background: none; border: none; padding: 4px 8px; cursor: pointer; text-align: left; }
+  .link-btn:hover { text-decoration: underline; }
+
+  dialog { border: 1px solid var(--line); border-radius: 8px; padding: 20px; width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 64px); box-sizing: border-box; background: var(--surface); color: var(--text); }
+  dialog::backdrop { background: rgba(10, 20, 35, 0.45); }
+  .dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .icon-btn { font: inherit; font-size: 16px; color: var(--muted); background: none; border: none; padding: 4px 8px; cursor: pointer; border-radius: 4px; }
+  .icon-btn:hover { background: var(--accent-soft); }
+  .category { display: grid; gap: 4px; padding-block: 8px; border-top: 1px solid var(--line); }
+  .category:first-child { border-top: none; padding-top: 0; }
+  .category h3 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 0; font-weight: 600; }
+
+  .filters { display: grid; gap: 12px; }
+  .field { display: grid; gap: 4px; }
+  .field label, .field legend { font-size: 13px; color: var(--muted); padding: 0; }
+  fieldset.field { border: none; margin: 0; padding: 0; }
+  .field input[type="text"], .field input[type="date"], .field select {
+    font: inherit; font-size: 14px; color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; width: 100%; box-sizing: border-box; min-width: 0;
+  }
+  .range { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .btn { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 4px; cursor: pointer; border: 1px solid var(--accent); background: var(--surface); color: var(--accent); justify-self: start; }
+
+  .list-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+  .sub { font-size: 13px; color: var(--muted); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.none { color: var(--muted); }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .row-toggle { font: inherit; font-size: 12px; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 4px; width: 28px; height: 28px; cursor: pointer; }
+  .row-toggle svg, .row-toggle i { transition: transform 0.15s; }
+  .row-toggle[aria-expanded="true"] svg, .row-toggle[aria-expanded="true"] i { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) { .row-toggle svg, .row-toggle i { transition: none; } }
+  tr.detail-row td { background: var(--bg); padding: 10px 12px; }
+  tr.detail-row dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: 13px; }
+  tr.detail-row dt { color: var(--muted); }
+  tr.detail-row dd { margin: 0; }
+  tr.detail-row dd.none { color: var(--muted); }
+  /* wide screens: all columns shown, no expandable rows */
+  @media (min-width: 641px) {
+    th.col-toggle, td.col-toggle, tr.detail-row { display: none; }
+  }
+  /* small screens: keep type, employee, and actions done; the rest moves into the expandable row */
+  @media (max-width: 640px) {
+    table { min-width: 0; }
+    th.col-wide, td.col-wide { display: none; }
+    td.col-toggle { width: 28px; text-align: right; }
+  }
+  .with-icon { display: inline-flex; align-items: center; gap: 8px; }
+
+  .progress { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bar { width: 60px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; flex: none; }
+  .bar span { display: block; height: 100%; background: var(--accent); }
+  .progress.complete .bar span { background: var(--ok); }
+
+  .empty { color: var(--muted); font-size: 14px; padding: 24px 8px; text-align: center; }
+
+  .pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .pagination .sub { margin-left: auto; }
+  .page-btn { font: inherit; font-size: 13px; min-width: 32px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--text); cursor: pointer; }
+  .page-btn[aria-current="page"] { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+  .page-btn:disabled { color: var(--muted); cursor: default; opacity: 0.6; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wf-note wf-bar">
+    <span>Wireframe with example data. Filters and pagination work; "Start a request" links don't. The collapsed setting is kept in this browser here; the app stores it in <code>app_user_settings</code>.</span>
+    <span class="wf-toggle" role="group" aria-label="Viewer role">
+      <span>View as:</span>
+      <button type="button" id="wf-role-user" aria-pressed="true">Department head (Digital Applications)</button>
+      <button type="button" id="wf-role-admin" aria-pressed="false">Admin</button>
+    </span>
+    <span class="wf-toggle" role="group" aria-label="Start panel view">
+      <span>Start panel:</span>
+      <button type="button" id="wf-start-full" aria-pressed="true">Full list</button>
+      <button type="button" id="wf-start-most" aria-pressed="false">Most used</button>
+    </span>
+  </div>
+
+  <h1>Library Employee Update Requests</h1>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <section class="box" aria-labelledby="start-heading">
+        <h2 id="start-heading"><button class="collapse-btn" type="button" id="start-toggle" aria-expanded="true" aria-controls="start-body"><span>Start a request</span><span class="chev" aria-hidden="true"><i class="fa-solid fa-chevron-up"></i></span></button></h2>
+        <div id="start-body">
+        <div id="start-list"></div>
+        </div>
+      </section>
+
+      <section class="box" aria-labelledby="filter-heading">
+        <h2 id="filter-heading">Filter</h2>
+        <form class="filters" id="filters">
+          <div class="field">
+            <label for="f-employee">Employee</label>
+            <input type="text" id="f-employee" placeholder="Name" list="employee-names" autocomplete="off">
+            <datalist id="employee-names"></datalist>
+          </div>
+          <div class="field">
+            <label for="f-group">Group</label>
+            <select id="f-group"></select>
+            <label class="check" for="f-subgroups"><input type="checkbox" id="f-subgroups" checked> Include subgroups</label>
+          </div>
+          <div class="field">
+            <label for="f-type">Request type</label>
+            <select id="f-type"></select>
+          </div>
+          <div class="field">
+            <label for="f-actions">Actions</label>
+            <select id="f-actions">
+              <option value="">All</option>
+              <option value="outstanding">Some outstanding</option>
+              <option value="complete">All complete</option>
+            </select>
+          </div>
+          <fieldset class="field">
+            <legend>Created</legend>
+            <div class="range">
+              <input type="date" id="f-created-from" aria-label="Created from">
+              <input type="date" id="f-created-to" aria-label="Created to">
+            </div>
+          </fieldset>
+          <fieldset class="field">
+            <legend>Effective</legend>
+            <div class="range">
+              <input type="date" id="f-effective-from" aria-label="Effective from">
+              <input type="date" id="f-effective-to" aria-label="Effective to">
+            </div>
+          </fieldset>
+          <button class="btn" type="reset">Clear filters</button>
+        </form>
+      </section>
+    </aside>
+
+    <section class="box" aria-labelledby="list-heading">
+      <div class="list-head">
+        <h2 id="list-heading">Existing requests</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Type</th><th>Employee</th><th class="col-wide">Group</th><th class="col-wide">Created</th><th class="col-wide">Effective</th><th>Actions done</th><th class="col-toggle"><span class="sr-only">Details</span></th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <nav class="pagination" aria-label="Request pages" id="pagination"></nav>
+    </section>
+  </div>
+</div>
+
+<dialog id="all-types" aria-labelledby="all-types-heading">
+  <div class="dialog-head">
+    <h2 id="all-types-heading">All request types</h2>
+    <button class="icon-btn" type="button" id="all-types-close" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+  </div>
+  <div id="all-types-body"></div>
+</dialog>
+
+<script>
+  // single list of request types: drives the start panel, the modal, the type filter, and table icons
+  const REQUEST_TYPES = [
+    { key: 'onboarding', label: 'Onboarding', icon: 'fa-user-plus', category: 'Arriving and leaving',
+      blurb: 'Set up a new employee: their record, accounts, and tickets for IT and facilities.' },
+    { key: 'separation', label: 'Separation', icon: 'fa-user-minus', category: 'Arriving and leaving',
+      blurb: 'An employee is leaving. Schedules account removal and lets the right teams know.' },
+    { key: 'transfer', label: 'Transfer', icon: 'fa-right-left', category: 'Changes',
+      blurb: 'An employee is moving to a different department or supervisor.' },
+    { key: 'meta-update', label: 'Update information', icon: 'fa-user-pen', category: 'Changes',
+      blurb: "Change an employee's details, like their title or work location." },
+    { key: 'permissions', label: 'Permissions', icon: 'fa-key', category: 'Access and equipment',
+      blurb: 'Request access, equipment, or software for an existing employee.' }
+  ];
+  const TYPES = Object.fromEntries(REQUEST_TYPES.map(t => [t.key, [t.label, t.icon]]));
+
+  // example: this user's most used types (from app_user_settings or their past submissions)
+  const MOST_USED = ['permissions', 'meta-update', 'onboarding'];
+
+  // group -> parent group, for "include subgroups"
+  const GROUP_PARENT = {
+    'Digital Applications': 'Information Technology',
+    'Information Technology': null,
+    'Facilities': null,
+    'Special Collections': null,
+    'Access Services': null,
+    'Research Services': null
+  };
+
+  // example requests, newest first
+  const REQUESTS = [
+    { type: 'meta-update', employee: 'Avery Brooks', group: 'Information Technology', created: '2026-10-17', effective: '2026-10-17', done: 0, total: 2 },
+    { type: 'onboarding', employee: 'Avery Brooks', group: 'Information Technology', created: '2026-10-16', effective: '2026-11-16', done: 1, total: 9 },
+    { type: 'meta-update', employee: 'Elena Ruiz', group: 'Digital Applications', created: '2026-10-15', effective: '2026-10-15', done: 1, total: 2 },
+    { type: 'permissions', employee: 'Jordan Alvarez', group: 'Digital Applications', created: '2026-10-14', effective: null, done: 1, total: 3 },
+    { type: 'onboarding', employee: 'Jordan Alvarez', group: 'Digital Applications', created: '2026-10-13', effective: '2026-11-02', done: 6, total: 10, href: '../onboarding-request/index.html' },
+    { type: 'permissions', employee: 'Dana Whitfield', group: 'Facilities', created: '2026-10-10', effective: null, done: 0, total: 2 },
+    { type: 'separation', employee: 'Tom Becker', group: 'Information Technology', created: '2026-10-09', effective: '2026-10-31', done: 2, total: 6 },
+    { type: 'onboarding', employee: 'Dana Whitfield', group: 'Facilities', created: '2026-10-08', effective: '2026-10-20', done: 7, total: 9 },
+    { type: 'separation', employee: 'Priya Lee', group: 'Special Collections', created: '2026-10-02', effective: '2026-10-16', done: 5, total: 5 },
+    { type: 'permissions', employee: 'Sofia Martins', group: 'Research Services', created: '2026-10-01', effective: null, done: 3, total: 3 },
+    { type: 'transfer', employee: 'Marcus Chen', group: 'Research Services', created: '2026-09-28', effective: '2026-10-12', done: 4, total: 4 },
+    { type: 'onboarding', employee: 'Kai Nakamura', group: 'Special Collections', created: '2026-09-15', effective: '2026-10-01', done: 10, total: 10 },
+    { type: 'meta-update', employee: 'Priya Lee', group: 'Special Collections', created: '2026-08-20', effective: '2026-08-20', done: 2, total: 2 },
+    { type: 'transfer', employee: 'Elena Ruiz', group: 'Digital Applications', created: '2026-08-03', effective: '2026-09-01', done: 4, total: 4 },
+    { type: 'separation', employee: 'Grace Okoye', group: 'Access Services', created: '2026-07-30', effective: '2026-08-15', done: 6, total: 6 }
+  ];
+
+  const PAGE_SIZE = 10;
+  let isAdmin = false;
+  let page = 1;
+
+  const $ = id => document.getElementById(id);
+  const fmt = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+  /**
+   * @description Whether a group is the given group or one of its descendants
+   */
+  function inGroup(group, filterGroup, includeSubgroups) {
+    if ( group === filterGroup ) return true;
+    if ( !includeSubgroups ) return false;
+    let parent = GROUP_PARENT[group];
+    while ( parent ) {
+      if ( parent === filterGroup ) return true;
+      parent = GROUP_PARENT[parent];
+    }
+    return false;
+  }
+
+  function visibleRequests() {
+    // non-admin example: head of Digital Applications sees their department and its subgroups
+    return isAdmin ? REQUESTS : REQUESTS.filter(r => inGroup(r.group, 'Digital Applications', true));
+  }
+
+  function filtered() {
+    const employee = $('f-employee').value.trim().toLowerCase();
+    const group = $('f-group').value;
+    const subgroups = $('f-subgroups').checked;
+    const type = $('f-type').value;
+    const actions = $('f-actions').value;
+    const cFrom = $('f-created-from').value, cTo = $('f-created-to').value;
+    const eFrom = $('f-effective-from').value, eTo = $('f-effective-to').value;
+
+    return visibleRequests().filter(r => {
+      if ( employee && !r.employee.toLowerCase().includes(employee) ) return false;
+      if ( group && !inGroup(r.group, group, subgroups) ) return false;
+      if ( type && r.type !== type ) return false;
+      if ( actions === 'outstanding' && r.done >= r.total ) return false;
+      if ( actions === 'complete' && r.done < r.total ) return false;
+      if ( cFrom && r.created < cFrom ) return false;
+      if ( cTo && r.created > cTo ) return false;
+      if ( (eFrom || eTo) && !r.effective ) return false;
+      if ( eFrom && r.effective < eFrom ) return false;
+      if ( eTo && r.effective > eTo ) return false;
+      return true;
+    });
+  }
+
+  function renderOptions() {
+    const visible = visibleRequests();
+    const groups = [...new Set(visible.map(r => r.group).concat(visible.map(r => GROUP_PARENT[r.group]).filter(Boolean)))].sort();
+    const current = $('f-group').value;
+    $('f-group').innerHTML = '<option value="">All groups</option>' + groups.map(g => `<option${g === current ? ' selected' : ''}>${g}</option>`).join('');
+    $('employee-names').innerHTML = [...new Set(visible.map(r => r.employee))].sort().map(n => `<option value="${n}"></option>`).join('');
+  }
+
+  function render() {
+    const rows = filtered();
+    const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    page = Math.min(page, pages);
+    const start = (page - 1) * PAGE_SIZE;
+    const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+    $('rows').innerHTML = pageRows.length ? pageRows.map((r, i) => {
+      const [label, icon] = TYPES[r.type];
+      const complete = r.done >= r.total;
+      const effective = r.effective ? fmt(r.effective) : 'None';
+      return `
+        <tr>
+          <td><span class="with-icon"><span class="type-icon sm" aria-hidden="true"><i class="fa-solid ${icon}"></i></span>${label}</span></td>
+          <td><a href="${r.href || '#'}">${r.employee}</a></td>
+          <td class="col-wide">${r.group}</td>
+          <td class="col-wide num">${fmt(r.created)}</td>
+          <td class="col-wide num${r.effective ? '' : ' none'}">${effective}</td>
+          <td><span class="progress${complete ? ' complete' : ''}"><span class="bar"><span style="width:${Math.round(r.done / r.total * 100)}%"></span></span>${r.done} of ${r.total}</span></td>
+          <td class="col-toggle"><button class="row-toggle" type="button" aria-expanded="false" aria-controls="req-detail-${i}" aria-label="Details for ${label}, ${r.employee}"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button></td>
+        </tr>
+        <tr class="detail-row" id="req-detail-${i}" hidden>
+          <td colspan="7">
+            <dl>
+              <dt>Group</dt><dd>${r.group}</dd>
+              <dt>Created</dt><dd>${fmt(r.created)}</dd>
+              <dt>Effective</dt><dd${r.effective ? '' : ' class="none"'}>${effective}</dd>
+            </dl>
+          </td>
+        </tr>`;
+    }).join('') : '<tr><td colspan="7" class="empty">No requests match these filters.</td></tr>';
+
+    // small screens: expand a row to see the columns hidden from the table
+    $('rows').querySelectorAll('.row-toggle').forEach(btn => btn.addEventListener('click', () => {
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', String(open));
+      document.getElementById(btn.getAttribute('aria-controls')).hidden = !open;
+    }));
+
+    // pagination is always shown, even with one page
+    let html = `<button class="page-btn" type="button" data-page="${page - 1}" ${page === 1 ? 'disabled' : ''}>Previous</button>`;
+    for ( let p = 1; p <= pages; p++ ) {
+      html += `<button class="page-btn" type="button" data-page="${p}" ${p === page ? 'aria-current="page"' : ''}>${p}</button>`;
+    }
+    html += `<button class="page-btn" type="button" data-page="${page + 1}" ${page === pages ? 'disabled' : ''}>Next</button>`;
+    html += `<span class="sub">${rows.length ? `${start + 1}–${start + pageRows.length} of ${rows.length}` : '0'} requests</span>`;
+    $('pagination').innerHTML = html;
+  }
+
+  $('pagination').addEventListener('click', e => {
+    const btn = e.target.closest('[data-page]');
+    if ( !btn || btn.disabled ) return;
+    page = Number(btn.dataset.page);
+    render();
+  });
+
+  $('filters').addEventListener('input', () => { page = 1; render(); });
+  $('filters').addEventListener('reset', () => setTimeout(() => { page = 1; render(); }));
+  $('filters').addEventListener('submit', e => e.preventDefault());
+
+  function setRole(admin) {
+    isAdmin = admin;
+    $('wf-role-user').setAttribute('aria-pressed', String(!admin));
+    $('wf-role-admin').setAttribute('aria-pressed', String(admin));
+    page = 1;
+    renderOptions();
+    render();
+  }
+  $('wf-role-user').addEventListener('click', () => setRole(false));
+  $('wf-role-admin').addEventListener('click', () => setRole(true));
+
+  function typeLink(t, opts={}) {
+    const blurb = opts.compact ? '' : `<span class="blurb">${t.blurb}</span>`;
+    return `<li><a href="#start"><span class="type-icon" aria-hidden="true"><i class="fa-solid ${t.icon}"></i></span><span class="name">${t.label}</span>${blurb}</a></li>`;
+  }
+
+  function renderStart(mode) {
+    if ( mode === 'most' ) {
+      const types = MOST_USED.map(k => REQUEST_TYPES.find(t => t.key === k));
+      $('start-list').innerHTML = `
+        <p class="start-sub">Your most used</p>
+        <ul class="start-list compact">${types.map(t => typeLink(t, { compact: true })).join('')}</ul>
+        <button class="link-btn" type="button" id="open-all-types">All request types</button>`;
+      $('open-all-types').addEventListener('click', () => $('all-types').showModal());
+    } else {
+      $('start-list').innerHTML = `<ul class="start-list">${REQUEST_TYPES.map(t => typeLink(t)).join('')}</ul>`;
+    }
+    $('wf-start-full').setAttribute('aria-pressed', String(mode !== 'most'));
+    $('wf-start-most').setAttribute('aria-pressed', String(mode === 'most'));
+  }
+
+  // modal: every type, grouped by category
+  const categories = [...new Set(REQUEST_TYPES.map(t => t.category))];
+  $('all-types-body').innerHTML = categories.map(c => `
+    <section class="category">
+      <h3>${c}</h3>
+      <ul class="start-list">${REQUEST_TYPES.filter(t => t.category === c).map(t => typeLink(t)).join('')}</ul>
+    </section>`).join('');
+  $('all-types-close').addEventListener('click', () => $('all-types').close());
+  $('all-types').addEventListener('click', e => { if ( e.target === $('all-types') ) $('all-types').close(); });
+
+  $('wf-start-full').addEventListener('click', () => renderStart('full'));
+  $('wf-start-most').addEventListener('click', () => renderStart('most'));
+  renderStart('full');
+
+  // "Start a request" panel: collapsible, remembered per user.
+  // the real app reads/writes app_user_settings.requests_start_panel_collapsed;
+  // this wireframe uses localStorage as a stand-in.
+  const SETTING = 'requests_start_panel_collapsed';
+  function readSetting() {
+    try { return localStorage.getItem(SETTING) === 'true'; } catch (e) { return false; }
+  }
+  function saveSetting(value) {
+    try { localStorage.setItem(SETTING, String(value)); } catch (e) {}
+  }
+  function setStartCollapsed(collapsed) {
+    $('start-toggle').setAttribute('aria-expanded', String(!collapsed));
+    $('start-body').hidden = collapsed;
+  }
+  $('start-toggle').addEventListener('click', () => {
+    const collapsed = $('start-toggle').getAttribute('aria-expanded') === 'true';
+    setStartCollapsed(collapsed);
+    saveSetting(collapsed);
+  });
+  setStartCollapsed(readSetting());
+
+  $('f-type').innerHTML = '<option value="">All types</option>' + REQUEST_TYPES.map(t => `<option value="${t.key}">${t.label}</option>`).join('');
+
+  renderOptions();
+  render();
+</script>
+</body>
+</html>

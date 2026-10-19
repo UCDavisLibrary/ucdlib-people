@@ -4,8 +4,13 @@ CREATE TABLE IF NOT EXISTS lib_employee_change_request(
   request_type VARCHAR(50) NOT NULL
     CONSTRAINT chk_lib_emp_change_req_type
     CHECK (request_type IN ('onboarding', 'separation', 'permissions', 'transfer', 'meta-update')),
-  lib_employee_id UUID 
+  lib_employee_id UUID
     REFERENCES lib_employee(lib_employee_id) ON DELETE RESTRICT,
+  lib_employee_supervisor_id UUID
+    REFERENCES lib_employee(lib_employee_id) ON DELETE SET NULL,
+  lib_group_id UUID
+    REFERENCES lib_group(lib_group_id) ON DELETE SET NULL,
+  lib_employee_forbidden BOOLEAN NOT NULL DEFAULT FALSE,
   parent_lib_employee_change_request_id UUID
     REFERENCES lib_employee_change_request(lib_employee_change_request_id) ON DELETE CASCADE,
   payload JSONB NOT NULL DEFAULT '{}',
@@ -166,8 +171,11 @@ CREATE TABLE IF NOT EXISTS lib_employee_change_request_revision (
   UNIQUE (lib_employee_change_request_id, revision_number)
 );
 
--- All change requests with their employee, submitter, parent request, and actions.
+-- All change requests with their employee, supervisor, group, submitter, parent request, and actions.
 -- lib_employee: object, or null (e.g. onboarding before the employee record is created)
+-- lib_employee_supervisor: object, or null
+-- lib_group: object, or null
+-- action_count, outstanding_action_count: outstanding = not done or skipped (cancelled counts as skipped)
 -- submitted_by_app_user: object, or null
 -- parent_lib_employee_change_request: object, or null if top-level
 -- actions: array of every action column plus a performed_by_app_user object (or null) and
@@ -194,6 +202,26 @@ SELECT
       'last_name', e.last_name
     )
   END AS lib_employee,
+  CASE WHEN sup.lib_employee_id IS NULL THEN NULL ELSE
+    jsonb_build_object(
+      'lib_employee_id', sup.lib_employee_id,
+      'iam_id', sup.iam_id,
+      'user_id', sup.user_id,
+      'email', sup.email,
+      'first_name', sup.first_name,
+      'last_name', sup.last_name
+    )
+  END AS lib_employee_supervisor,
+  CASE WHEN g.lib_group_id IS NULL THEN NULL ELSE
+    jsonb_build_object(
+      'lib_group_id', g.lib_group_id,
+      'name', g.name,
+      'label', g.label,
+      'label_short', g.label_short
+    )
+  END AS lib_group,
+  COALESCE(act.action_count, 0) AS action_count,
+  COALESCE(act.outstanding_action_count, 0) AS outstanding_action_count,
   CASE WHEN p.lib_employee_change_request_id IS NULL THEN NULL ELSE
     jsonb_build_object(
       'lib_employee_change_request_id', p.lib_employee_change_request_id,
@@ -206,6 +234,10 @@ SELECT
 FROM lib_employee_change_request r
 LEFT JOIN lib_employee e
   ON e.lib_employee_id = r.lib_employee_id
+LEFT JOIN lib_employee sup
+  ON sup.lib_employee_id = r.lib_employee_supervisor_id
+LEFT JOIN lib_group g
+  ON g.lib_group_id = r.lib_group_id
 LEFT JOIN app_user su
   ON su.app_user_id = r.submitted_by_app_user_id
 LEFT JOIN lib_employee_change_request p
@@ -225,7 +257,9 @@ LEFT JOIN LATERAL (
       END,
       'display_status', lib_emp_change_req_action_display_status(a)
     ) ORDER BY a.created_at, a.sort_order, a.action_key
-  ) AS actions
+  ) AS actions,
+  count(*) AS action_count,
+  count(*) FILTER (WHERE a.status NOT IN ('done', 'skipped')) AS outstanding_action_count
   FROM lib_employee_change_request_action a
   LEFT JOIN app_user u ON u.app_user_id = a.performed_by_app_user_id
   WHERE a.lib_employee_change_request_id = r.lib_employee_change_request_id

@@ -50,3 +50,37 @@ BEGIN
   RETURN uid;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Searches employees by exact (case-insensitive) match of any of their ids.
+-- query: the id value
+-- id_type: optional id column to restrict the search to (iam_id, employee_id, student_id, user_id, email, keycloak_id).
+--          if null, all id columns are searched
+CREATE OR REPLACE FUNCTION search_lib_employee_ids(query TEXT, id_type TEXT DEFAULT NULL)
+  RETURNS TABLE (lib_employee_id UUID, matched_id_type TEXT) AS $$
+BEGIN
+  IF id_type IS NOT NULL AND id_type NOT IN ('iam_id', 'employee_id', 'student_id', 'user_id', 'email', 'keycloak_id') THEN
+    RAISE EXCEPTION USING
+      MESSAGE = format('Invalid id_type: %s', id_type),
+      ERRCODE = '22023';
+  END IF;
+
+  IF coalesce(trim(query), '') = '' THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+  SELECT e.lib_employee_id, ids.col
+  FROM lib_employee e
+  CROSS JOIN LATERAL (VALUES
+    ('iam_id', e.iam_id),
+    ('employee_id', e.employee_id),
+    ('student_id', e.student_id),
+    ('user_id', e.user_id),
+    ('email', e.email),
+    ('keycloak_id', e.keycloak_id)
+  ) AS ids(col, val)
+  WHERE ids.val IS NOT NULL
+    AND (search_lib_employee_ids.id_type IS NULL OR ids.col = search_lib_employee_ids.id_type)
+    AND lower(ids.val) = lower(trim(query));
+END;
+$$ LANGUAGE plpgsql STABLE;

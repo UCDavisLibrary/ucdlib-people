@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Employee Detail</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"></script>
+<style>
+  body { margin: 0; }
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1d2430;
+    --muted: #5b6575;
+    --line: #d9dee6;
+    --accent: #022851;
+    --accent-soft: #e6ecf3;
+    --ok: #2e6b3a;
+    --ok-soft: #e4f1e6;
+    --warn: #8a5a00;
+    --warn-soft: #fbf0d9;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #12161d;
+      --surface: #1a2029;
+      --text: #e6e9ee;
+      --muted: #9aa4b2;
+      --line: #2e3643;
+      --accent: #9cc3ea;
+      --accent-soft: #1f2d3d;
+      --ok: #8fd19e;
+      --ok-soft: #1c2e21;
+      --warn: #f2c66d;
+      --warn-soft: #33290f;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #12161d;
+    --surface: #1a2029;
+    --text: #e6e9ee;
+    --muted: #9aa4b2;
+    --line: #2e3643;
+    --accent: #9cc3ea;
+    --accent-soft: #1f2d3d;
+    --ok: #8fd19e;
+    --ok-soft: #1c2e21;
+    --warn: #f2c66d;
+    --warn-soft: #33290f;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+  .page { max-width: 960px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: grid; gap: 20px; }
+
+  .wf-note { font-size: 12px; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; padding: 6px 10px; }
+  .wf-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+  .wf-toggle { display: inline-flex; align-items: center; gap: 4px; }
+  .wf-toggle button { font: inherit; font-size: 12px; padding: 2px 8px; border: 1px dashed var(--muted); border-radius: 4px; background: none; color: var(--muted); cursor: pointer; }
+  .wf-toggle button[aria-pressed="true"] { border-style: solid; color: var(--text); background: var(--surface); }
+
+  a { color: var(--accent); }
+  button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .crumbs { font-size: 13px; color: var(--muted); }
+  .crumbs a { text-decoration: none; }
+
+  header { display: flex; align-items: center; gap: 16px; }
+  .avatar { display: grid; place-items: center; flex: none; width: 64px; height: 64px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); font-size: 28px; }
+  .header-body { display: grid; gap: 6px; min-width: 0; }
+  h1 { font-size: 24px; margin: 0; text-wrap: balance; }
+  h2 { font-size: 15px; margin: 0; }
+  .meta { display: flex; flex-wrap: wrap; gap: 4px 20px; color: var(--muted); font-size: 14px; }
+  .meta b { color: var(--text); font-weight: 600; }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .tabs button { font: inherit; font-size: 14px; background: none; border: none; color: var(--muted); padding: 10px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; white-space: nowrap; }
+  .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  .panel { display: grid; gap: 20px; }
+  .overview-cols { display: grid; gap: 20px; align-items: start; }
+  @media (min-width: 800px) { .overview-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .box { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 12px; }
+  .box.attention { border-color: var(--warn); background: var(--warn-soft); }
+  .box-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+  .sub { font-size: 13px; color: var(--muted); }
+  code { font-family: var(--mono); font-size: 12px; }
+
+  .notice { display: flex; gap: 10px; align-items: flex-start; }
+  .notice .icon { color: var(--warn); padding-top: 2px; }
+
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 24px; margin: 0; font-size: 14px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; }
+  dl.ids dd { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  dl.ids code { font-size: 13px; word-break: break-all; }
+  .copy-btn { font-size: 12px; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 50%; width: 28px; height: 28px; padding: 0; cursor: pointer; flex: none; display: inline-grid; place-items: center; }
+  .copy-btn .ic-done { display: none; }
+  .copy-btn.copied .ic-copy { display: none; }
+  .copy-btn.copied .ic-done { display: inline-block; }
+  .circle-btn { font-size: 12px; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 50%; width: 28px; height: 28px; padding: 0; cursor: pointer; flex: none; display: inline-grid; place-items: center; }
+  .circle-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .label-with-help { display: inline-flex; align-items: center; gap: 6px; }
+  .help-btn { font: inherit; font-size: 11px; font-weight: 700; line-height: 1; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 50%; width: 18px; height: 18px; padding: 0; cursor: pointer; display: inline-grid; place-items: center; }
+  .help-btn:hover { color: var(--accent); border-color: var(--accent); }
+  dialog { border: 1px solid var(--line); border-radius: 8px; padding: 20px; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 64px); box-sizing: border-box; background: var(--surface); color: var(--text); }
+  dialog::backdrop { background: rgba(10, 20, 35, 0.45); }
+  dialog p { margin: 0 0 8px; }
+  .dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .icon-btn { font: inherit; font-size: 16px; color: var(--muted); background: none; border: none; padding: 4px 8px; cursor: pointer; border-radius: 4px; }
+  .icon-btn:hover { background: var(--accent-soft); }
+  pre.json { margin: 0; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; font-family: var(--mono); font-size: 13px; overflow-x: auto; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .copy-btn.copied { color: var(--ok); border-color: var(--ok); }
+  .none { color: var(--muted); }
+
+  .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; vertical-align: 1px; }
+  .pill.neutral { background: var(--accent-soft); color: var(--accent); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.muted { background: var(--line); color: var(--muted); }
+  .stack-list { display: grid; gap: 2px; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chain { font-size: 13px; color: var(--muted); }
+  .row-toggle svg, .row-toggle i { transition: transform 0.15s; }
+  .row-toggle[aria-expanded="true"] svg, .row-toggle[aria-expanded="true"] i { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) { .row-toggle svg, .row-toggle i { transition: none; } }
+  tr.detail-row td { background: var(--bg); padding: 10px 12px; }
+  tr.detail-row dl { font-size: 13px; }
+  #employees .mobile-only { display: none; }
+  @media (min-width: 641px) {
+    #employees tr.detail-row { display: none; }
+  }
+  /* small screens: position + department in one column, supervisor chain in an expandable row */
+  @media (max-width: 640px) {
+    #employees .wide-only { display: none; }
+    #employees .mobile-only { display: table-cell; }
+    #employees td.toggle-cell { width: 28px; text-align: right; }
+  }
+
+  .segmented { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .segmented button { font: inherit; font-size: 13px; padding: 5px 12px; border: none; background: var(--surface); color: var(--text); cursor: pointer; }
+  .segmented button + button { border-left: 1px solid var(--line); }
+  .segmented button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+
+  .type-icon { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font-size: 12px; flex: none; }
+  .with-icon { display: inline-flex; align-items: center; gap: 8px; }
+  .progress { display: flex; align-items: center; gap: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bar { width: 60px; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; flex: none; }
+  .bar span { display: block; height: 100%; background: var(--accent); }
+  .progress.complete .bar span { background: var(--ok); }
+
+  .disc-list { display: grid; gap: 16px; }
+  .disc-head { display: grid; gap: 2px; }
+  .details-json { display: grid; gap: 4px; }
+  .empty { color: var(--muted); font-size: 14px; }
+
+  .pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .pagination .sub { margin-left: auto; }
+  .page-btn { font: inherit; font-size: 13px; min-width: 32px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--text); cursor: pointer; }
+  .page-btn[aria-current="page"] { border-color: var(--accent); background: var(--accent); color: var(--surface); }
+  .page-btn:disabled { color: var(--muted); cursor: default; opacity: 0.6; }
+
+  @media (max-width: 520px) {
+    dl { grid-template-columns: 1fr; gap: 0; }
+    dd { margin-bottom: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wf-note wf-bar">
+    <span>Wireframe with example data. Links between pages and buttons don't do anything yet.</span>
+    <span class="wf-toggle" role="group" aria-label="Example discrepancies">
+      <span>Discrepancies:</span>
+      <button type="button" data-disc="0" aria-pressed="false">None</button>
+      <button type="button" data-disc="1" aria-pressed="false">One</button>
+      <button type="button" data-disc="3" aria-pressed="true">Several</button>
+    </span>
+  </div>
+
+  <nav class="crumbs"><a href="#overview">Employees</a> / Sam Okafor</nav>
+
+  <header>
+    <span class="avatar" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
+    <div class="header-body">
+      <h1>Sam Okafor</h1>
+      <div class="meta">
+        <span>Position <b>Head of Digital Applications</b></span>
+        <span>Department <b>Digital Applications</b></span>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-overview" aria-controls="overview" aria-selected="true">Overview</button>
+    <button role="tab" id="tab-metadata" aria-controls="metadata" aria-selected="false">Metadata</button>
+    <button role="tab" id="tab-employees" aria-controls="employees" aria-selected="false">Employees</button>
+    <button role="tab" id="tab-discrepancies" aria-controls="discrepancies" aria-selected="false">Discrepancies</button>
+    <button role="tab" id="tab-requests" aria-controls="requests" aria-selected="false">Requests</button>
+  </div>
+
+  <!-- Overview -->
+  <section class="panel" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+    <div class="box attention" id="disc-notice">
+      <div class="notice">
+        <span class="icon" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        <div id="disc-notice-text"></div>
+      </div>
+    </div>
+
+    <div class="overview-cols">
+    <div class="box">
+      <h2>Summary</h2>
+      <dl>
+        <dt>Name</dt><dd>Sam Okafor</dd>
+        <dt>Position</dt><dd>Head of Digital Applications</dd>
+        <dt>Department</dt><dd>Digital Applications <span class="pill neutral">Department head</span></dd>
+        <dt>Interim head of</dt><dd>Access Services</dd>
+        <dt>Supervisor</dt><dd><a href="#">Lena Hart</a> <span class="pill muted" title="Set manually. Rosetta updates won't replace it.">Custom</span></dd>
+        <dt>Other groups</dt><dd><span class="stack-list"><span>Web Committee</span><span>Staff Assembly</span></span></dd>
+        <dt>Direct reports</dt><dd><a href="#employees">4</a></dd>
+        <dt>Start date</dt><dd>Jul 1, 2016</dd>
+        <dt>End date</dt><dd class="none">None</dd>
+      </dl>
+    </div>
+
+    <div class="box">
+      <h2>Unique Identifiers</h2>
+      <dl class="ids" id="ids"></dl>
+      <p class="sr-only" id="copy-status" aria-live="polite"></p>
+    </div>
+    </div>
+  </section>
+
+  <!-- Metadata -->
+  <section class="panel" id="metadata" role="tabpanel" aria-labelledby="tab-metadata" hidden></section>
+
+  <!-- Employees -->
+  <section class="panel" id="employees" role="tabpanel" aria-labelledby="tab-employees" hidden>
+    <div class="box">
+      <div class="box-head">
+        <div class="segmented" role="group" aria-label="Which reports to show">
+          <button type="button" id="reports-direct" aria-pressed="true">Direct reports</button>
+          <button type="button" id="reports-all" aria-pressed="false">All reports</button>
+        </div>
+        <span class="sub" id="reports-count"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th class="wide-only">Position</th><th class="wide-only">Department</th><th class="wide-only">Supervisor chain</th><th class="mobile-only">Position</th><th class="mobile-only"><span class="sr-only">Details</span></th></tr></thead>
+          <tbody id="reports-rows"></tbody>
+        </table>
+      </div>
+      <nav class="pagination" aria-label="Report pages" id="reports-pages"></nav>
+    </div>
+  </section>
+
+  <!-- Discrepancies -->
+  <section class="panel" id="discrepancies" role="tabpanel" aria-labelledby="tab-discrepancies" hidden>
+    <div class="disc-list" id="disc-list"></div>
+  </section>
+
+  <!-- Requests -->
+  <section class="panel" id="requests" role="tabpanel" aria-labelledby="tab-requests" hidden>
+    <div class="box">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Type</th><th>Submitted</th><th>Effective</th><th>Actions done</th></tr></thead>
+          <tbody id="request-rows"></tbody>
+        </table>
+      </div>
+      <nav class="pagination" aria-label="Request pages" id="request-pages"></nav>
+    </div>
+  </section>
+</div>
+
+<dialog id="modal" aria-labelledby="modal-title">
+  <div class="dialog-head">
+    <h2 id="modal-title"></h2>
+    <button class="icon-btn" type="button" id="modal-close" aria-label="Close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+  </div>
+  <div id="modal-body"></div>
+</dialog>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const escapeHtml = str => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const fmt = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+  // ---- example data ----
+
+  // open discrepancies for this employee (from lib_employee_full.employee_record_discrepancies)
+  const DISCREPANCIES = [
+    { type: 'no-supervisor-rosetta-record', label: 'Supervisor has no Rosetta record',
+      explain: "The employee's supervisor in this system couldn't be found in Rosetta, so the supervisor can't be checked or updated automatically.",
+      details: { local_supervisor: 'Lena Hart', rosetta_supervisor_id: null },
+      created: '2026-10-02', confirmed: '2026-10-20', created_by_job: 'rosetta_sync', confirmed_by_job: 'rosetta_sync' },
+    { type: 'department-mismatch', label: 'Department doesn’t match Rosetta',
+      explain: "Rosetta lists a different home department for the employee than this system does. This usually clears up once HR finishes a pending update.",
+      details: { local_department: 'Digital Applications', rosetta_department: 'Information Technology' },
+      created: '2026-10-09', confirmed: '2026-10-20', created_by_job: 'rosetta_sync', confirmed_by_job: 'rosetta_sync' },
+    { type: 'no-rosetta-position', label: 'No primary position in Rosetta',
+      explain: "Rosetta has no active position marked as primary for the employee, so their position title couldn't be updated.",
+      details: { appointments_found: 2 },
+      created: '2026-10-15', confirmed: '2026-10-20', created_by_job: 'rosetta_sync', confirmed_by_job: 'rosetta_sync' }
+  ];
+
+  // metadata grouped by meta_group (from lib_employee_meta + lib_employee_full.employee_meta)
+  // name = lib_employee_meta.name, value = raw jsonb value, display = how the page shows it
+  const META = [
+    { group: 'general', label: 'General', fields: [
+      { name: 'preferred_name', label: 'Preferred name', value: 'Sam', source: 'local' },
+      { name: 'pronouns', label: 'Pronouns', value: 'they/them', source: 'local',
+        description: 'Shown in the staff directory and on name badges. Optional, and only set if the employee asks.' },
+      { name: 'work_location', label: 'Work location', value: 'Shields Library, room 350', source: 'local' }
+    ] },
+    { group: 'contact', label: 'Contact', fields: [
+      { name: 'work_phone', label: 'Work phone', value: '(530) 555-0142', source: 'rosetta' },
+      { name: 'email', label: 'Email', value: 'sokafor@ucdavis.edu', source: 'rosetta' }
+    ] },
+    { group: 'appointment', label: 'Appointment', fields: [
+      { name: 'lib_primary_position_number', label: 'Primary position number', value: '40012345', source: 'local',
+        description: "Picks which appointment counts as this employee's primary one with the library when they have more than one. If it isn't set, the sync uses their only appointment or the one Rosetta marks as primary." },
+      { name: 'appointment_title', label: 'Appointment title', value: 'Programmer/Analyst IV', source: 'rosetta' },
+      { name: 'appointment_type', label: 'Appointment type', value: 'Career', source: 'rosetta',
+        description: 'The kind of appointment from Rosetta, such as career, contract, limited, or student.' },
+      { name: 'percent_time', label: 'Percent time', value: 100, display: '100%', source: 'rosetta' }
+    ] },
+    { group: 'hr', label: 'HR', fields: [
+      { name: 'home_department_code', label: 'Home department code', value: '060123', source: 'rosetta',
+        description: 'The payroll department code from Rosetta. It can differ from the library department shown on this page.' },
+      { name: 'original_hire_date', label: 'Original hire date', value: '2016-07-01', display: 'Jul 1, 2016', source: 'rosetta' }
+    ] }
+  ];
+
+  // reports (from get_lib_employee_reports + lib_employee_full). chain = supervisors from Sam down
+  const REPORTS = [
+    { name: 'Jordan Alvarez', position: 'Programmer/Analyst II', dept: 'Digital Applications', depth: 1, chain: ['Sam Okafor'] },
+    { name: 'Chris Doyle', position: 'Programmer/Analyst III', dept: 'Digital Applications', depth: 1, chain: ['Sam Okafor'] },
+    { name: 'Elena Ruiz', position: 'Application Developer', dept: 'Digital Applications', depth: 1, chain: ['Sam Okafor'] },
+    { name: 'Maya Singh', position: 'UX Designer', dept: 'Digital Applications', depth: 1, chain: ['Sam Okafor'] },
+    { name: 'Noel Varga', position: 'Student Developer', dept: 'Digital Applications', depth: 2, chain: ['Sam Okafor', 'Elena Ruiz'] },
+    { name: 'Ari Cohen', position: 'Student Designer', dept: 'Digital Applications', depth: 2, chain: ['Sam Okafor', 'Maya Singh'] }
+  ];
+
+  const TYPES = {
+    'permissions': ['Permissions', 'fa-key'],
+    'meta-update': ['Update information', 'fa-user-pen'],
+    'transfer': ['Transfer', 'fa-right-left']
+  };
+  const REQUESTS = [
+    { type: 'meta-update', submitted: '2026-10-15', effective: '2026-10-15', done: 1, total: 2 },
+    { type: 'permissions', submitted: '2026-09-08', effective: null, done: 3, total: 3 },
+    { type: 'transfer', submitted: '2024-06-03', effective: '2024-07-01', done: 5, total: 5 }
+  ];
+
+  // ---- tabs ----
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function showTab(id) {
+    tabs.forEach(t => {
+      const selected = t.getAttribute('aria-controls') === id;
+      t.setAttribute('aria-selected', String(selected));
+      $(t.getAttribute('aria-controls')).hidden = !selected;
+    });
+  }
+  tabs.forEach(t => t.addEventListener('click', () => {
+    const id = t.getAttribute('aria-controls');
+    showTab(id);
+    history.replaceState(null, '', '#' + id);
+  }));
+  function showTabFromHash() {
+    const id = location.hash.slice(1);
+    if ( tabs.some(t => t.getAttribute('aria-controls') === id) ) showTab(id);
+  }
+  window.addEventListener('hashchange', showTabFromHash);
+
+  // ---- discrepancies: overview notice + tab ----
+  function renderDiscrepancies(count) {
+    const list = DISCREPANCIES.slice(0, count);
+
+    // overview notice: call out one; if more, name the first and say "and x more"
+    $('disc-notice').hidden = !list.length;
+    if ( list.length ) {
+      const more = list.length > 1 ? ` and ${list.length - 1} more` : '';
+      $('disc-notice-text').innerHTML =
+        `<b>Record discrepancy:</b> ${list[0].label}${more}. <a href="#discrepancies">View ${list.length > 1 ? 'discrepancies' : 'discrepancy'}</a>`;
+    }
+
+    $('disc-list').innerHTML = list.length ? list.map(d => `
+      <div class="box">
+        <div class="disc-head">
+          <h2>${d.label}</h2>
+          <code class="sub">${d.type}</code>
+        </div>
+        <p style="margin:0">${d.explain}</p>
+        <dl>
+          <dt>First found</dt><dd>${fmt(d.created)} by <code>${d.created_by_job}</code></dd>
+          <dt>Last confirmed</dt><dd>${fmt(d.confirmed)} by <code>${d.confirmed_by_job}</code></dd>
+        </dl>
+        <div class="details-json">
+          <span class="sub">Details</span>
+          <pre class="json">${escapeHtml(JSON.stringify(d.details, null, 2))}</pre>
+        </div>
+      </div>`).join('') : '<div class="box"><p class="empty" style="margin:0">No open discrepancies. This record matches Rosetta.</p></div>';
+
+    document.querySelectorAll('[data-disc]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.disc) === count)));
+  }
+  document.querySelectorAll('[data-disc]').forEach(b => b.addEventListener('click', () => renderDiscrepancies(Number(b.dataset.disc))));
+
+  // ---- metadata, by meta_group ----
+  $('metadata').innerHTML = META.map((g, gi) => `
+    <div class="box">
+      <div class="box-head">
+        <h2>${g.label}</h2>
+        <button class="circle-btn" type="button" data-json="${gi}" aria-label="Show raw JSON for ${g.label}" title="Show raw JSON"><i class="fa-solid fa-code" aria-hidden="true"></i></button>
+      </div>
+      <dl>
+        ${g.fields.map((f, fi) => `
+          <dt><span class="label-with-help">${f.label}${f.description ? `<button class="help-btn" type="button" data-help="${gi}.${fi}" aria-label="What is ${f.label}?" title="What is this?">?</button>` : ''}</span></dt>
+          <dd>${f.display ?? f.value} <span class="pill ${f.source === 'local' ? 'neutral' : 'muted'}">${f.source === 'local' ? 'Local' : 'Rosetta'}</span></dd>`).join('')}
+      </dl>
+    </div>`).join('');
+
+  /**
+   * @description Open the shared modal with a title and body html
+   */
+  function openModal(title, html) {
+    $('modal-title').textContent = title;
+    $('modal-body').innerHTML = html;
+    $('modal').showModal();
+  }
+
+  $('metadata').addEventListener('click', e => {
+    const jsonBtn = e.target.closest('[data-json]');
+    if ( jsonBtn ) {
+      const g = META[Number(jsonBtn.dataset.json)];
+      const raw = { meta_group: g.group, meta: Object.fromEntries(g.fields.map(f => [f.name, f.value])) };
+      openModal(`${g.label}: raw JSON`, `<pre class="json">${escapeHtml(JSON.stringify(raw, null, 2))}</pre>`);
+      return;
+    }
+    const helpBtn = e.target.closest('[data-help]');
+    if ( helpBtn ) {
+      const [gi, fi] = helpBtn.dataset.help.split('.').map(Number);
+      const f = META[gi].fields[fi];
+      openModal(f.label, `<p>${f.description}</p><p class="sub">Field: <code>${f.name}</code></p>`);
+    }
+  });
+  $('modal-close').addEventListener('click', () => $('modal').close());
+  $('modal').addEventListener('click', e => { if ( e.target === $('modal') ) $('modal').close(); });
+
+  // ---- employees tab ----
+  function renderReports(all) {
+    const rows = REPORTS.filter(r => all || r.depth === 1);
+    $('reports-rows').innerHTML = rows.map((r, i) => `
+      <tr>
+        <td><a href="#">${r.name}</a></td>
+        <td class="wide-only">${r.position}</td>
+        <td class="wide-only">${r.dept}</td>
+        <td class="wide-only chain">${r.chain.join(' › ')}</td>
+        <td class="mobile-only">${r.position}<div class="sub">${r.dept}</div></td>
+        <td class="mobile-only toggle-cell"><button class="circle-btn row-toggle" type="button" aria-expanded="false" aria-controls="report-detail-${i}" aria-label="Supervisor chain for ${r.name}"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button></td>
+      </tr>
+      <tr class="detail-row" id="report-detail-${i}" hidden>
+        <td colspan="6"><dl><dt>Supervisor chain</dt><dd class="chain">${r.chain.join(' › ')}</dd></dl></td>
+      </tr>`).join('');
+
+    // small screens: expand a row to see the supervisor chain
+    $('reports-rows').querySelectorAll('.row-toggle').forEach(btn => btn.addEventListener('click', () => {
+      const open = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', String(open));
+      $(btn.getAttribute('aria-controls')).hidden = !open;
+    }));
+    $('reports-count').textContent = all ? `${rows.length} reports` : `${rows.length} direct reports`;
+    // pagination is always shown, even with one page
+    $('reports-pages').innerHTML = `
+      <button class="page-btn" type="button" disabled>Previous</button>
+      <button class="page-btn" type="button" aria-current="page">1</button>
+      <button class="page-btn" type="button" disabled>Next</button>
+      <span class="sub">1\u2013${rows.length} of ${rows.length}</span>`;
+    $('reports-direct').setAttribute('aria-pressed', String(!all));
+    $('reports-all').setAttribute('aria-pressed', String(all));
+  }
+  $('reports-direct').addEventListener('click', () => renderReports(false));
+  $('reports-all').addEventListener('click', () => renderReports(true));
+
+  // ---- requests tab ----
+  $('request-rows').innerHTML = REQUESTS.map(r => {
+    const [label, icon] = TYPES[r.type];
+    const complete = r.done >= r.total;
+    return `
+      <tr>
+        <td><span class="with-icon"><span class="type-icon" aria-hidden="true"><i class="fa-solid ${icon}"></i></span><a href="#">${label}</a></span></td>
+        <td class="num">${fmt(r.submitted)}</td>
+        <td class="num${r.effective ? '' : ' none'}">${r.effective ? fmt(r.effective) : 'None'}</td>
+        <td><span class="progress${complete ? ' complete' : ''}"><span class="bar"><span style="width:${Math.round(r.done / r.total * 100)}%"></span></span>${r.done} of ${r.total}</span></td>
+      </tr>`;
+  }).join('');
+  // pagination is always shown, even with one page
+  $('request-pages').innerHTML = `
+    <button class="page-btn" type="button" disabled>Previous</button>
+    <button class="page-btn" type="button" aria-current="page">1</button>
+    <button class="page-btn" type="button" disabled>Next</button>
+    <span class="sub">1–${REQUESTS.length} of ${REQUESTS.length} requests</span>`;
+
+  // ---- unique identifiers, each with a copy button ----
+  const IDS = [
+    ['IAM ID', '1000318'],
+    ['Employee ID', '10111222'],
+    ['Student ID', null],
+    ['User ID', 'sokafor'],
+    ['Email', 'sokafor@ucdavis.edu'],
+    ['Keycloak ID', '3f9c1e72-5b8a-4d1e-9a7c-2e6f0b4d8a11'],
+    ['Library employee ID', '6f1c2a0e-8d4b-4c3a-b1f2-9e7d5a3c0b64']
+  ];
+  $('ids').innerHTML = IDS.map(([label, value], i) => value
+    ? `<dt>${label}</dt><dd><code id="id-val-${i}">${value}</code><button class="copy-btn" type="button" data-copy="${i}" data-label="${label}" aria-label="Copy ${label}" title="Copy ${label}"><i class="fa-regular fa-copy ic-copy" aria-hidden="true"></i><i class="fa-solid fa-check ic-done" aria-hidden="true"></i></button></dd>`
+    : `<dt>${label}</dt><dd class="none">None</dd>`).join('');
+
+  /**
+   * @description Copy an id to the clipboard. Falls back to selecting the text if the clipboard is refused.
+   */
+  function copyId(btn) {
+    const el = $('id-val-' + btn.dataset.copy);
+    const done = () => {
+      btn.classList.add('copied');
+      $('copy-status').textContent = `${btn.dataset.label} copied`;
+      setTimeout(() => btn.classList.remove('copied'), 1500);
+    };
+    const selectText = () => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    };
+    if ( navigator.clipboard && navigator.clipboard.writeText ) {
+      navigator.clipboard.writeText(el.textContent).then(done).catch(selectText);
+    } else {
+      selectText();
+    }
+  }
+  $('ids').addEventListener('click', e => {
+    const btn = e.target.closest('.copy-btn');
+    if ( btn ) copyId(btn);
+  });
+
+  renderDiscrepancies(3);
+  renderReports(false);
+  showTabFromHash();
+</script>
+</body>
+</html>

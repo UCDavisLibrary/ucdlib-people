@@ -27,5 +27,5 @@ Example data: 18 employees across seven departments (Digital Applications is a s
 
 ## Notes
 
-- `lib_employee_full` includes an `employee_record_discrepancies` array (id, discrepancy, details, created_at, last_confirmed_at; oldest first, `[]` if none), which drives the discrepancy indicator and filter.
+- `lib_employee_full` includes an `employee_record_discrepancies` array (id, discrepancy, created_at, last_confirmed_at; oldest first, `[]` if none - no `details`, those come from `employee_record_discrepancy_full`), which drives the discrepancy indicator and filter.
 - The employee views file was renamed from `05-employee-views.sql` to `10-employee-views.sql` so it runs after `09-discrepancy.sql` on a fresh database.

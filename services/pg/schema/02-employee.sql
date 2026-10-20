@@ -84,3 +84,26 @@ BEGIN
     AND lower(ids.val) = lower(trim(query));
 END;
 $$ LANGUAGE plpgsql STABLE;
+
+-- Returns everyone who reports to an employee, directly or indirectly, with the supervisor chain
+-- from the given employee down to each report's own supervisor. Does not filter by active status.
+-- root_lib_employee_id: the employee whose reports to return
+-- direct_only: if true, only direct reports (depth 1)
+-- returns: lib_employee_id, depth (1 = direct report), supervisor_chain (ids, root first)
+CREATE OR REPLACE FUNCTION get_lib_employee_reports(root_lib_employee_id UUID, direct_only BOOLEAN DEFAULT FALSE)
+  RETURNS TABLE (lib_employee_id UUID, depth INTEGER, supervisor_chain UUID[]) LANGUAGE sql STABLE AS $$
+    WITH RECURSIVE reports AS (
+      SELECT e.lib_employee_id, 1 AS depth, ARRAY[root_lib_employee_id] AS supervisor_chain
+      FROM lib_employee e
+      WHERE e.supervisor_lib_employee_id = root_lib_employee_id
+        AND e.lib_employee_id <> root_lib_employee_id
+      UNION ALL
+      SELECT e.lib_employee_id, r.depth + 1, r.supervisor_chain || r.lib_employee_id
+      FROM lib_employee e
+      JOIN reports r ON e.supervisor_lib_employee_id = r.lib_employee_id
+      -- guard against supervisor loops in bad data
+      WHERE NOT direct_only
+        AND NOT e.lib_employee_id = ANY(r.supervisor_chain || r.lib_employee_id)
+    )
+    SELECT lib_employee_id, depth, supervisor_chain FROM reports
+$$;
